@@ -1,0 +1,28 @@
+{
+  "name": "esxpress",
+  "version": "1.0.0",
+  "description": "Backend con Express",
+  "homepage": "https://github.com/Des-full-stack-de-sol-web-JavaScript/producto-3#readme",
+  "bugs": {
+    "url": "https://github.com/Des-full-stack-de-sol-web-JavaScript/producto-3/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Des-full-stack-de-sol-web-JavaScript/producto-3.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
