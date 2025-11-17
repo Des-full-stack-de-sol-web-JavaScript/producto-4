@@ -1,18 +1,27 @@
-// app.js
+import http from 'http';
+import express from 'express';
+import cors from 'cors';
+import { connectDB } from './src/config/mongo.js';
 
-// 1. Importa el módulo Express
-const express = require('express');
 
-// 2. Crea una instancia de la aplicación Express
-const app = express();
-const port = 3000; // Define el puerto del servidor
+async function startServer() {
+  await connectDB();
+  
+  const app = express();
+  const httpServer = http.createServer(app);
+  const port = 3000;
 
-// 3. Define una ruta básica (Endpoint)
-app.get('/', (req, res) => {
-  res.send('¡Hola Mundo desde Express!');
-});
+  app.use(cors());
+  app.use(express.json()); 
 
-// 4. Inicia el servidor para escuchar peticiones
-app.listen(port, () => {
-  console.log(`Servidor Express escuchando en http://localhost:${port}`);
-});
+  app.get('/', (req, res) => {
+    res.send('✅ Servidor Express funcionando y conectado a MongoDB.');
+  });
+
+
+  await new Promise((resolve) => httpServer.listen({ port }, resolve));
+  
+  console.log(`🚀 Servidor Express listo en http://localhost:${port}`);
+}
+
+startServer();
