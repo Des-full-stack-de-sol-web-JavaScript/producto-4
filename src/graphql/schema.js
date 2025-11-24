@@ -1,5 +1,17 @@
-import { gql } from 'apollo-server-express';
+import { gql } from 'graphql-tag';
 
+/**
+ * Definición del esquema GraphQL (typeDefs).
+ * 
+ * Aquí se describen:
+ * - Tipos (Type)
+ * - Consultas (Query)
+ * - Mutaciones (Mutation)
+ * - Inputs
+ * 
+ * Este esquema será cargado por Apollo Server para generar
+ * el endpoint /graphql.
+ */
 export const typeDefs = gql`
   type User {
     _id: ID!
@@ -18,7 +30,7 @@ export const typeDefs = gql`
     tipo: String
   }
 
-
+  # Consultas permitidas
   type Query {
     users: [User!]!
     user(id: ID!): User
@@ -27,8 +39,9 @@ export const typeDefs = gql`
     voluntariado(id: ID!): Voluntariado
   }
 
+  # Operaciones de escritura
   type Mutation {
-    registrarUsuario(nombre: String!, email: String!, password: String!): User
+    addUser(nombre: String!, email: String!, password: String!): User
     deleteUser(id: ID!): Boolean
 
     addVoluntariado(

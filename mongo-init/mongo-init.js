@@ -13,7 +13,7 @@ const userList = [
     rol: "usuario",
     nombre: "Kevin",
     email: "kevin.gomez@gmail.com",
-    password: "password123" 
+    password: "password123"
   },
   {
     rol: "usuario",
@@ -61,12 +61,13 @@ const userList = [
 
 const postList = [
   {
-    title: "Acompañamiento hospitalario infantil",
+    title: "Intercambio de idiomas: Español - Inglés",
     date: "2025-02-15",
-    description: "Buscamos voluntarios para leer cuentos y jugar con niños ingresados en el hospital local. Turnos de tarde.",
+    description: "Nativo español busca compañero para practicar inglés a nivel conversación. Ofrezco ayuda con el español.",
     author: "Kevin",
     email: "kevin.gomez@gmail.com",
-    category: "Voluntariado",
+    category: "Intercambio",
+    type: "Oferta",
     color: "pink"
   },
   {
@@ -76,60 +77,67 @@ const postList = [
     author: "Thabata",
     email: "thabata.diaz@gmail.com",
     category: "Voluntariado",
+    type: "Petición",
     color: "blue"
   },
   {
-    title: "Recogida de alimentos no perecederos",
+    title: "Compartir coche: Viaje Madrid - Barcelona (3 plazas)",
     date: "2025-03-14",
-    description: "Organizamos una recogida para el banco de alimentos. Se necesita ayuda para clasificar y transportar la comida el sábado por la mañana.",
-    author: "Anna",
+    description: "Salida el 14/03 a las 8:00 AM. Se comparten gastos de gasolina y peajes. Maletero amplio.",
+    author: "Ana",
     email: "anna.ruiz@gmail.com",
-    category: "Voluntariado",
+    category: "Compartir",
+    type: "Oferta",
     color: "teal"
   },
   {
-    title: "Ayuda en refugio de animales",
+    title: "Busco canguro responsable para cuidar de mi gata",
     date: "2025-02-10",
-    description: "Se buscan voluntarios para pasear perros y ayudar con la limpieza en el refugio 'Patitas'. Fines de semana.",
+    description: "Busco persona responsable para cuidar de una gata de forma ocasional. Su dueña ya no puede hacerse cargo.",
     author: "Mar",
     email: "mar.sanchez@gmail.com",
-    category: "Voluntariado",
+    category: "Otras",
+    type: "Petición",
     color: "green"
   },
   {
-    title: "Ayuda informática gratuita para mayores",
+    title: "Se ofrece ayuda con informática",
     date: "2025-04-05",
-    description: "Ayudo a personas mayores a configurar su móvil, ordenador o tablet. Paciencia garantizada. Gratis.",
+    description: "Te ayudo a configurar tu ordenador, instalar programas o solucionar problemas de software.",
     author: "Pol",
     email: "pol.lopez@gmail.com",
     category: "Servicios",
+    type: "Oferta",
     color: "purple"
   },
   {
-    title: "Clases de español para refugiados",
+    title: "Intercambio: Clases de yoga por ayuda con huerto urbano",
     date: "2025-06-22",
-    description: "Se buscan profesores voluntarios de español para programa de acogida. Nivel A1 y A2. Martes y jueves.",
-    author: "Lia",
-    email: "lia.martin@gmail.com",
-    category: "Voluntariado",
+    description: "Profesora de yoga ofrece clases privadas a cambio de ayuda semanal con el mantenimiento de su huerto urbano.",
+    author: "Anna",
+    email: "anna.ruiz@gmail.com",
+    category: "Intercambio",
+    type: "Oferta",
     color: "pink"
   },
   {
-    title: "Reparto de comida en comedor social",
+    title: "Se busca grupo para jugar fútbol los domingos",
     date: "2025-05-12",
-    description: "Necesitamos manos para servir las cenas en el comedor social del barrio. Turnos de 19:00 a 21:00.",
-    author: "Rau",
-    email: "rau.perez@gmail.com",
-    category: "Voluntariado",
+    description: "Hombre de 30 años busca equipo o grupo para partidos de fútbol los domingos por la tarde.",
+    author: "Pol",
+    email: "pol.lopez@gmail.com",
+    category: "Deportes",
+    type: "Petición",
     color: "orange"
   },
   {
-    title: "Donación de ropa de abrigo",
+    title: "Se vende bicicleta de montaña",
     date: "2025-03-14",
-    description: "Campaña de invierno: Se recoge ropa de abrigo, mantas y sacos de dormir para personas sin hogar.",
-    author: "Jor",
-    email: "jor.fernandez@gmail.com",
-    category: "Donación",
+    description: "Bicicleta en buen estado, freno hidráulico y cambio Shimano. Precio negociable.",
+    author: "Kevin",
+    email: "kevin.gomez@gmail.com",
+    category: "Ventas",
+    type: "Oferta",
     color: "red"
   }
 ];
@@ -138,12 +146,11 @@ db.users.insertMany(userList);
 print(`✅ ${userList.length} usuarios insertados.`);
 
 const voluntariadosToSeed = postList
-  .filter((item) => item.category === "Voluntariado")
   .map((item) => ({
     titulo: item.title,
-    entidad: item.author,
+    email: item.email,
     descripcion: item.description,
-    fecha: new Date(item.date),
+    fecha: item.date,
     tipo: item.type,
   }));
 

@@ -8,7 +8,17 @@ import { connectDB } from './src/config/mongo.js';
 import { typeDefs } from './src/graphql/schema.js';
 import { resolvers } from './src/graphql/resolvers.js';
 
-
+/**
+ * Punto de entrada principal del servidor.
+ * 
+ * - Inicia Express.
+ * - Conecta con MongoDB.
+ * - Configura Apollo Server como middleware en /graphql.
+ * - Inicia servidor HTTP.
+ * 
+ * Este servidor se encarga de manejar todas las peticiones
+ * GraphQL enviadas por Postman, frontend o clientes externos.
+ */
 async function startServer() {
   await connectDB();
 
@@ -30,8 +40,20 @@ async function startServer() {
     '/graphql',
     cors(),
     express.json(),
-    expressMiddleware(server)
+    expressMiddleware(server//, {
+      /**
+       * Context global de GraphQL.
+       * Aquí puedes añadir autenticación.
+       */
+      //context: async ({ req }) => {
+      //  return {
+      //   token: req.headers.authorization || null,
+      // };
+      //  },
+      //}
+    )
   );
+
 
 
   await new Promise((resolve) => httpServer.listen({ port }, resolve));

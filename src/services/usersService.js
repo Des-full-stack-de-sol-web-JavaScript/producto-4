@@ -2,15 +2,18 @@ import { getDB } from '../config/mongo.js';
 import { ObjectId } from 'mongodb';
 
 /**
- * Función auxiliar para obtener la colección 'users'
+ * Obtiene la colección 'usuarios' de la base de datos.
+ * @returns {import('mongodb').Collection} Colección de usuarios.
  */
 function getCollection() {
   return getDB().collection('users');
 }
 
 /**
- * Devuelve todos los usuarios
- * @returns {Promise<Array>} Un array de todos los usuarios
+ * Obtiene todos los usuarios de la base de datos.
+ * @async
+ * @returns {Promise<Array<object>>} Lista de usuarios.
+ * @throws {Error} Si ocurre un error durante la consulta.
  */
 export async function getAllUsers() {
   try {
@@ -21,9 +24,11 @@ export async function getAllUsers() {
 }
 
 /**
- * Devuelve un usuario por su ID
- * @param {string} id - El ID del usuario
- * @returns {Promise<object|null>} El documento del usuario o null
+ * Obtiene un usuario por su ID.
+ * @async
+ * @param {string} id - ID del usuario en formato string.
+ * @returns {Promise<object|null>} Usuario encontrado o null.
+ * @throws {Error} Si ocurre un error en la consulta.
  */
 export async function getUserById(id) {
   try {
@@ -37,9 +42,14 @@ export async function getUserById(id) {
 }
 
 /**
- * Registra un nuevo usuario
- * @param {object} data - { nombre, email, password }
- * @returns {Promise<object>} El usuario recién creado
+ * Crea un nuevo usuario en la base de datos.
+ * @async
+ * @param {object} data - Datos del usuario.
+ * @param {string} data.nombre - Nombre del usuario.
+ * @param {string} data.email - Email del usuario.
+ * @param {string} data.password - Contraseña del usuario.
+ * @returns {Promise<object>} Usuario recién creado.
+ * @throws {Error} Si ocurre un error al insertar.
  */
 export async function registrarUsuario(data) {
   try {
@@ -65,9 +75,11 @@ export async function registrarUsuario(data) {
 }
 
 /**
- * Elimina un usuario por su ID
- * @param {string} id - El ID del usuario
- * @returns {Promise<boolean>} True si se eliminó, false si no
+ * Elimina un usuario por su ID.
+ * @async
+ * @param {string} id - ID del usuario a eliminar.
+ * @returns {Promise<boolean>} true si fue eliminado, false si no existe.
+ * @throws {Error} Si ocurre un error durante la eliminación.
  */
 export async function deleteUser(id) {
   try {
