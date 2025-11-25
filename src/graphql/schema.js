@@ -29,6 +29,11 @@ export const typeDefs = gql`
     descripcion: String
     tipo: String
   }
+  # Nuevo tipo para la respuesta de autenticación: token y datos del usuario
+  type AuthPayload {
+    token: String!
+    user: User!
+  }
 
   # Consultas permitidas
   type Query {
@@ -41,6 +46,7 @@ export const typeDefs = gql`
 
   # Operaciones de escritura
   type Mutation {
+    login(email: String!, password: String!): AuthPayload!
     addUser(nombre: String!, email: String!, password: String!): User
     deleteUser(id: ID!): Boolean
 

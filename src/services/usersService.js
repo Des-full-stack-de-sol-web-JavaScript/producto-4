@@ -1,5 +1,6 @@
 import { getDB } from '../config/mongo.js';
 import { ObjectId } from 'mongodb';
+import bcrypt from 'bcrypt';
 
 /**
  * Obtiene la colección 'usuarios' de la base de datos.
@@ -90,5 +91,37 @@ export async function deleteUser(id) {
     return result.deletedCount === 1;
   } catch (error) {
     throw new Error(`Error al eliminar usuario: ${error.message}`);
+  }
+
+}
+
+/**
+ * Autentica a un usuario por email y contraseña.
+ * * Es el paso esencial donde se verifica la identidad del usuario.
+ * @async
+ * @param {string} email - Email del usuario.
+ * @param {string} password - Contraseña en texto plano.
+ * @returns {Promise<object|null>} Usuario si las credenciales son correctas (sin contraseña).
+ * @throws {Error} Si las credenciales son incorrectas.
+ */
+export async function loginUsuario(email, password) {
+  try {
+    const user = await getCollection().findOne({ email });
+
+    if (!user) {
+      throw new Error('Usuario no encontrado o credenciales incorrectas.');
+    }
+
+    const isValid = await bcrypt.compare(password, user.password);
+
+    if (!isValid) {
+      throw new Error('Credenciales incorrectas.');
+    }
+
+    const { password: _, ...userWithoutPassword } = user;
+    
+    return userWithoutPassword; 
+  } catch (error) {
+    throw new Error(`Error durante el inicio de sesión: ${error.message}`);
   }
 }

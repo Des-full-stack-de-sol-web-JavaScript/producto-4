@@ -1,5 +1,22 @@
 import * as UserService from '../services/usersService.js';
 import * as VoluntariadoService from '../services/voluntariadosService.js';
+import jwt from 'jsonwebtoken';
+
+// Clave secreta para firmar los JWT. ¡DEBE SER UNA VARIABLE DE ENTORNO EN PRODUCCIÓN!
+const JWT_SECRET = 'SUPER_SECRETO_PARA_PRODUCTO3'; 
+
+/**
+ * Función auxiliar para verificar la autenticación.
+ * Lanza un error si el usuario no está autenticado (context.userId no está presente).
+ * @param {object} context - El contexto de la petición GraphQL.
+ * @throws {Error} Si el usuario no está autenticado.
+ */
+const checkAuth = (context) => {
+  if (!context.userId) {
+    throw new Error('Autenticación requerida para esta operación.');
+  }
+  return true;
+};
 
 /**
  * Resolvers de GraphQL que conectan las Queries y Mutations
@@ -54,6 +71,27 @@ export const resolvers = {
    * Resolvers de Mutations (inserción, edición, borrado)
    */
   Mutation: {
+      /**
+     * Mutación para el inicio de sesión.
+     * 1. Llama a loginUsuario para verificar las credenciales.
+     * 2. Si es exitoso, genera un token JWT.
+     * @returns {Promise<object>} AuthPayload con token y user.
+     */
+    login: async (_, { email, password }) => { 
+      const user = await UserService.loginUsuario(email, password);
+
+      const token = jwt.sign(
+        { userId: user._id.toString(), email: user.email }, 
+        JWT_SECRET, 
+        { expiresIn: '1d' } 
+      );
+
+      return {
+        token,
+        user
+      };
+    },
+    
     /**
      * Añade un usuario nuevo.
      * @param {object} args
@@ -69,7 +107,8 @@ export const resolvers = {
      * @param {string} args.id
      * @returns {Promise<boolean>}
      */
-    deleteUser: async (_, { id }) => {
+    deleteUser: async (_, { id }, context) => {
+      checkAuth(context);
       return await UserService.deleteUser(id);
     },
     /**
@@ -88,7 +127,8 @@ export const resolvers = {
     * @param {object} args.input
     * @returns {Promise<object|null>}
     */
-    updateVoluntariado: async (_, { id, titulo, email, fecha, descripcion, tipo }) => {
+    updateVoluntariado: async (_, { id, titulo, email, fecha, descripcion, tipo }, context) => {
+      checkAuth(context);
       return await VoluntariadoService.updateVoluntariado(id, { titulo, email, fecha, descripcion, tipo });
     },
     /**
@@ -97,7 +137,8 @@ export const resolvers = {
      * @param {string} args.id
      * @returns {Promise<boolean>}
      */
-    deleteVoluntariado: async (_, { id }) => {
+    deleteVoluntariado: async (_, { id }, context) => {
+      checkAuth(context);
       return await VoluntariadoService.deleteVoluntariado(id);
     }
   }
