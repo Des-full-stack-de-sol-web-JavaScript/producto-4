@@ -55,6 +55,11 @@ export const resolvers = {
    */
     voluntariado: async (_, { id }) => {
       return await VoluntariadoService.getVoluntariadoById(id);
+    },
+
+    // Conectamos la nueva query con el servicio
+    statsVoluntariados: async () => {
+      return await VoluntariadoService.getVoluntariadoStats();
     }
   },
   /** 

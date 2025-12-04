@@ -86,3 +86,15 @@ export async function deleteVoluntariado(id) {
     throw new Error(`Error al eliminar voluntariado: ${error.message}`);
   }
 }
+
+/**
+ * Obtiene estadísticas de los voluntariados usando agregaciones de Mongoose.
+ */
+export async function getVoluntariadoStats() {
+  try {
+    // Llamamos al método estático que acabamos de crear en el modelo
+    return await Voluntariado.obtenerEstadisticas();
+  } catch (error) {
+    throw new Error(`Error al obtener estadísticas: ${error.message}`);
+  }
+}

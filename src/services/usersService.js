@@ -48,15 +48,11 @@ export async function registrarUsuario(data) {
       throw new Error('El email ya está registrado.');
     }
 
-    // Encriptamos la contraseña
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(data.password, saltRounds);
-
     // USANDO MODELO DE MONGOOSE para crear el documento
     const nuevoUsuario = await User.create({
       nombre: data.nombre,
       email: data.email,
-      password: hashedPassword,
+      password: data.password,
       rol: data.rol || "usuario" // Usa el rol de los datos o "usuario" por defecto
     });
 

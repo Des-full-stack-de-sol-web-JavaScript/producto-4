@@ -147,10 +147,10 @@ print(`✅ ${userList.length} usuarios insertados.`);
 
 const voluntariadosToSeed = postList
   .map((item) => ({
-    titulo: item.titulo,
+    titulo: item.title,
     email: item.email,
     descripcion: item.description,
-    fecha: item.fecha,
+    fecha: item.date,
     tipo: item.type,
   }));
 
