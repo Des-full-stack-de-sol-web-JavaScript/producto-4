@@ -1,13 +1,5 @@
-import { getDB } from '../config/mongo.js';
-import { ObjectId } from 'mongodb';
+import { Voluntariado } from '../models/voluntariado.model.js';
 
-/**
- * Obtiene la colección 'voluntariados' de la base de datos.
- * @returns {import('mongodb').Collection} Colección de voluntariados.
- */
-function getCollection() {
-  return getDB().collection('voluntariados');
-}
 
 /**
  * Obtiene todos los voluntariados almacenados en la base de datos.
@@ -17,7 +9,7 @@ function getCollection() {
  */
 export async function getAllVoluntariados() {
   try {
-    return await getCollection().find({}).toArray();
+    return await Voluntariado.find({});
   } catch (error) {
     throw new Error(`Error al obtener voluntariados: ${error.message}`);
   }
@@ -32,10 +24,7 @@ export async function getAllVoluntariados() {
  */
 export async function getVoluntariadoById(id) {
   try {
-    if (!ObjectId.isValid(id)) {
-      return null;
-    }
-    return await getCollection().findOne({ _id: new ObjectId(id) });
+    return await Voluntariado.findById(id);
   } catch (error) {
     throw new Error(`Error al obtener voluntariado por ID: ${error.message}`);
   }
@@ -54,8 +43,8 @@ export async function getVoluntariadoById(id) {
  */
 export async function addVoluntariado(data) {
   try {
-    const result = await getCollection().insertOne(data);
-    return await getCollection().findOne({ _id: result.insertedId });
+    const nuevoVoluntariado = await Voluntariado.create(data);
+    return nuevoVoluntariado;
   } catch (error) {
     throw new Error(`Error al añadir voluntariado: ${error.message}`);
   }
@@ -71,27 +60,12 @@ export async function addVoluntariado(data) {
  */
 export async function updateVoluntariado(id, data) {
   try {
-    if (!ObjectId.isValid(id)) {
-      return null;
-    }
-    const updateDoc = {};
-
-    Object.keys(data).forEach(key => {
-      if (data[key] !== undefined) {
-        updateDoc[key] = data[key];
-      }
-    });
-
-    if (Object.keys(updateDoc).length === 0) {
-      return await getCollection().findOne({ _id: new ObjectId(id) });
-    }
-
-    await getCollection().updateOne(
-      { _id: new ObjectId(id) },
-      { $set: updateDoc }
+    const updated = await Voluntariado.findByIdAndUpdate(
+      id,
+      { $set: data },
+      { new: true, runValidators: true }
     );
-
-    return await getCollection().findOne({ _id: new ObjectId(id) });
+    return updated;
   } catch (error) {
     throw new Error(`Error al actualizar voluntariado: ${error.message}`);
   }
@@ -106,13 +80,21 @@ export async function updateVoluntariado(id, data) {
  */
 export async function deleteVoluntariado(id) {
   try {
-    if (!ObjectId.isValid(id)) {
-      return false;
-    }
-
-    const result = await getCollection().deleteOne({ _id: new ObjectId(id) });
+    const result = await Voluntariado.deleteOne({ _id: id });
     return result.deletedCount === 1;
   } catch (error) {
     throw new Error(`Error al eliminar voluntariado: ${error.message}`);
+  }
+}
+
+/**
+ * Obtiene estadísticas de los voluntariados usando agregaciones de Mongoose.
+ */
+export async function getVoluntariadoStats() {
+  try {
+    // Llamamos al método estático que acabamos de crear en el modelo
+    return await Voluntariado.obtenerEstadisticas();
+  } catch (error) {
+    throw new Error(`Error al obtener estadísticas: ${error.message}`);
   }
 }

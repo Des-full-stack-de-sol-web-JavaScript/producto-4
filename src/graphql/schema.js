@@ -17,7 +17,7 @@ export const typeDefs = gql`
     _id: ID!
     nombre: String!
     email: String!
-    password: String!
+    password: String
     rol: String
   }
 
@@ -34,6 +34,12 @@ export const typeDefs = gql`
     token: String!
     user: User!
   }
+    
+  # Nuevo tipo para el resultado de la agregación
+  type Estadistica {
+    _id: String!  # El nombre del tipo (ej: "Presencial")
+    cantidad: Int!
+  }
 
   # Consultas permitidas
   type Query {
@@ -42,6 +48,8 @@ export const typeDefs = gql`
 
     voluntariados: [Voluntariado!]!
     voluntariado(id: ID!): Voluntariado
+    
+    statsVoluntariados: [Estadistica!]!
   }
 
   # Operaciones de escritura

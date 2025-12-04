@@ -1,4 +1,5 @@
-import http from 'http';
+import http from 'https'; // se usa httpS
+import fs from 'fs'; // necesario para leer los certificados
 import express from 'express';
 import cors from 'cors';
 import { ApolloServer } from '@apollo/server';
@@ -38,7 +39,7 @@ function getAuthUserId(token) {
  * - Inicia Express.
  * - Conecta con MongoDB.
  * - Configura Apollo Server como middleware en /graphql.
- * - Inicia servidor HTTP.
+ * - Inicia servidor HTTPS.
  * 
  * Este servidor se encarga de manejar todas las peticiones
  * GraphQL enviadas por Postman, frontend o clientes externos.
@@ -47,7 +48,12 @@ async function startServer() {
   await connectDB();
 
   const app = express();
-  const httpServer = http.createServer(app);
+  //CONFIGURACIÓN HTTPS
+  const httpsOptions = {
+    key: fs.readFileSync('server.key'),
+    cert: fs.readFileSync('server.cert')
+  };
+  const httpServer = http.createServer(httpsOptions, app);
   const port = 3000;
 
   // Creamos el servidor Apollo, pasándole nuestro esquema y resolvers importados
