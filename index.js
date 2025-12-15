@@ -1,4 +1,4 @@
-import http from 'https'; // se usa httpS
+import https from 'https'; // se usa httpS
 import fs from 'fs'; // necesario para leer los certificados
 import express from 'express';
 import cors from 'cors';
@@ -33,6 +33,7 @@ function getAuthUserId(token) {
   }
 }
 
+
 /**
  * Punto de entrada principal del servidor.
  * 
@@ -53,7 +54,8 @@ async function startServer() {
     key: fs.readFileSync('server.key'),
     cert: fs.readFileSync('server.cert')
   };
-  const httpServer = http.createServer(httpsOptions, app);
+  const httpsServer = https.createServer(httpsOptions, app);
+
   const port = 3000;
 
   // Creamos el servidor Apollo, pasándole nuestro esquema y resolvers importados
@@ -81,19 +83,25 @@ async function startServer() {
 
         // 2. Obtener el userId a partir del token decodificado
         const userId = getAuthUserId(token);
+        
+        let user = null;
+        if (userId) {
+          user = await User.findById(userId); 
+          }
 
         return {
           // 3. Pasar el userId al contexto, lo usan los resolvers para 'checkAuth'
-          userId
+           userId, user
         };
       },
     })
   );
 
-  await new Promise((resolve) => httpServer.listen({ port }, resolve));
+  await new Promise((resolve) => httpsServer.listen({ port }, resolve));
 
-  console.log(`🚀 Servidor Express listo en http://localhost:${port}`);
-  console.log(`🚀 Servidor GraphQL listo en http://localhost:${port}/graphql`);
+  console.log(`🚀 Servidor Express listo en https://localhost:${port}`);
+  console.log(`🚀 Servidor GraphQL listo en https://localhost:${port}/graphql`);
+
 }
 
 startServer();

@@ -11,6 +11,19 @@ const JWT_SECRET = 'SUPER_SECRETO_PARA_PRODUCTO3';
  * @param {object} context - El contexto de la petición GraphQL.
  * @throws {Error} Si el usuario no está autenticado.
  */
+export const checkAdmin = async (context) => { 
+  if (!context.userId) throw new Error('Autenticación requerida');
+
+  const user = await User.findById(context.userId);
+  if (!user) throw new Error('Usuario no encontrado');
+
+  if (user.rol !== 'admin') {
+    throw new Error('Acceso denegado: solo administradores');
+  }
+  return true;
+
+};
+
 const checkAuth = (context) => {
   if (!context.userId) {
     throw new Error('Autenticación requerida para esta operación.');
