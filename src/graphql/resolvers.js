@@ -6,30 +6,63 @@ import jwt from 'jsonwebtoken';
 const JWT_SECRET = 'SUPER_SECRETO_PARA_PRODUCTO3';
 
 /**
+ * Función auxiliar para verificar si el usuario es administrador.
+ * Lanza un error si el usuario no está autenticado o no es administrador(context.userId no está presente).
+ * @param {object} context - El contexto de la petición GraphQL.
+ * @throws {Error} Si el usuario no está autenticado o si no es admin.
+ */
+export const checkAdmin = (context) => { 
+  if (!context.user) throw new Error('Autenticación requerida');
+  if (context.user.rol !== 'admin') {
+    throw new Error('Acceso denegado: solo administradores');
+  }
+  return true;
+};
+
+/**
  * Función auxiliar para verificar la autenticación.
  * Lanza un error si el usuario no está autenticado (context.userId no está presente).
  * @param {object} context - El contexto de la petición GraphQL.
  * @throws {Error} Si el usuario no está autenticado.
  */
-export const checkAdmin = async (context) => { 
-  if (!context.userId) throw new Error('Autenticación requerida');
 
-  const user = await User.findById(context.userId);
-  if (!user) throw new Error('Usuario no encontrado');
-
-  if (user.rol !== 'admin') {
-    throw new Error('Acceso denegado: solo administradores');
-  }
-  return true;
-
-};
-
-const checkAuth = (context) => {
-  if (!context.userId) {
-    throw new Error('Autenticación requerida para esta operación.');
-  }
+export const checkAuth = (context) => {
+  if (!context.user) throw new Error('Autenticación requerida');
   return true;
 };
+
+/**
+ * Verifica si el usuario puede acceder a un recurso.
+ * - Admin: acceso total
+ * - Usuario normal: solo a su propio recurso
+ *
+ * @param {object} context - Contexto GraphQL
+ * @param {string} ownerValue - Identificador del dueño (userId o email)
+ * @param {'userId'|'email'} ownerType - Tipo de comparación
+ */
+export const checkautorizado = (context, ownerValue, ownerType = 'userId') => {
+  if (!context.user) {
+    throw new Error('Autenticación requerida');
+  }
+
+  // Admin puede todo
+  if (context.user.rol === 'admin') {
+    return true;
+  }
+
+  // Usuario normal: solo lo suyo
+  const currentValue =
+    ownerType === 'email'
+      ? context.user.email
+      : context.user.userId;
+
+  if (currentValue !== ownerValue) {
+    throw new Error('No autorizado');
+  }
+
+  return true;
+};
+
 
 export const resolvers = {
   /** 
@@ -42,6 +75,7 @@ export const resolvers = {
  */
 
     users: async () => {
+      checkautorizado(context, null);
       return await UserService.getAllUsers();
     },
     /**
@@ -51,6 +85,7 @@ export const resolvers = {
     * @returns {Promise<object|null>}
     */
     user: async (_, { id }) => {
+      checkautorizado(context, id, 'userId');
       return await UserService.getUserById(id);
     },
     /**
@@ -89,7 +124,11 @@ export const resolvers = {
       const user = await UserService.loginUsuario(email, password);
 
       const token = jwt.sign(
-        { userId: user._id.toString(), email: user.email },
+        { 
+          userId: user._id.toString(),
+           email: user.email,
+           rol: user.rol
+           },
         JWT_SECRET,
         { expiresIn: '1d' }
       );
@@ -116,7 +155,7 @@ export const resolvers = {
      * @returns {Promise<boolean>}
      */
     deleteUser: async (_, { id }, context) => {
-      checkAuth(context);
+      checkautorizado(context, id, 'userId');
       return await UserService.deleteUser(id);
     },
     /**
@@ -137,7 +176,8 @@ export const resolvers = {
     * @returns {Promise<object|null>}
     */
     updateVoluntariado: async (_, { id, titulo, email, fecha, descripcion, tipo }, context) => {
-      checkAuth(context);
+      const voluntariado = await VoluntariadoService.getVoluntariadoById(id);
+      checkautorizado(context, voluntariado.email, 'email');
       return await VoluntariadoService.updateVoluntariado(id, { titulo, email, fecha, descripcion, tipo });
     },
     /**
@@ -147,7 +187,8 @@ export const resolvers = {
      * @returns {Promise<boolean>}
      */
     deleteVoluntariado: async (_, { id }, context) => {
-      checkAuth(context);
+      const voluntariado = await VoluntariadoService.getVoluntariadoById(id);
+      checkautorizado(context, voluntariado.email, 'email');
       return await VoluntariadoService.deleteVoluntariado(id);
     }
   }
