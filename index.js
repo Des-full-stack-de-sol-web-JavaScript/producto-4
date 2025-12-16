@@ -17,7 +17,7 @@ const JWT_SECRET = 'SUPER_SECRETO_PARA_PRODUCTO3';
  * @param {string} token - Token JWT del encabezado 'Authorization'.
  * @returns {string|null} - El userId extraído del token o null si es inválido/expirado.
  */
-function getAuthUserId(token) {
+function getAuthUser(token) {
   if (!token) {
     return null;
   }
@@ -26,9 +26,14 @@ function getAuthUserId(token) {
 
   try {
     const payload = jwt.verify(cleanToken, JWT_SECRET);
-    return payload.userId;
+
+    return {
+      userId: payload.userId,
+      email: payload.email,
+      rol: payload.rol
+    };
   } catch (err) {
-    console.warn("Token JWT inválido o expirado:", err.message);
+    console.warn('Token inválido o expirado');
     return null;
   }
 }
@@ -77,25 +82,20 @@ async function startServer() {
        * Context global de GraphQL.
        * Aquí se añade la autenticación leyendo el header 'Authorization'.
        */
-      context: async ({ req }) => {
-        // 1. Obtener el token del encabezado
-        const token = req.headers.authorization || '';
+       context: async ({ req }) => {
+      // 1. Leer el token del header Authorization
+      const token = req.headers.authorization || '';
 
-        // 2. Obtener el userId a partir del token decodificado
-        const userId = getAuthUserId(token);
-        
-        let user = null;
-        if (userId) {
-          user = await User.findById(userId); 
-          }
+      // 2. Decodificar el JWT
+      const authUser = getAuthUser(token);
 
-        return {
-          // 3. Pasar el userId al contexto, lo usan los resolvers para 'checkAuth'
-           userId, user
-        };
-      },
-    })
-  );
+      // 3. Pasar el usuario al contexto
+      return {
+        user: authUser // { userId, email, rol } | null
+      };
+    },
+  })
+);
 
   await new Promise((resolve) => httpsServer.listen({ port }, resolve));
 
