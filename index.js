@@ -72,6 +72,9 @@ async function startServer() {
 
   await server.start();
 
+  app.use(express.static('public'));
+
+
   // Configuramos los middlewares de Express
   app.use(
     '/graphql',
