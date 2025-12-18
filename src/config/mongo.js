@@ -1,28 +1,20 @@
-import { MongoClient } from 'mongodb';
+import mongoose from "mongoose";
 
 const uri = 'mongodb://admin:pass@localhost:27017/producto3?authSource=admin';
 
-const client = new MongoClient(uri);
-
-let db;
+//Opciones de Conexión Escalable
+const clientOptions = {
+  serverSelectionTimeoutMS: 5000, // Tiempo máximo para intentar conectarse
+  maxPoolSize: 10, // Pool de conexiones permite 10 operaciones simultáneas
+  minPoolSize: 2,  // Mantener siempre al menos 2 conexiones vivas
+};
 
 export async function connectDB() {
   try {
-    console.log('Conectando a MongoDB...');
-    await client.connect();
-
-    db = client.db('producto3');
-
+    await mongoose.connect(uri, clientOptions);
     console.log('✅ Conexión a MongoDB establecida.');
   } catch (error) {
     console.error('❌ No se pudo conectar a MongoDB', error);
     process.exit(1);
   }
-}
-
-export function getDB() {
-  if (!db) {
-    throw new Error('La base de datos no está conectada. Llama a connectDB primero.');
-  }
-  return db;
 }
