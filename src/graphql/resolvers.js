@@ -74,7 +74,7 @@ export const resolvers = {
  * @returns {Promise<Array<object>>}
  */
 
-    users: async () => {
+    users: async (_, args, context) => {
       checkautorizado(context, null);
       return await UserService.getAllUsers();
     },
