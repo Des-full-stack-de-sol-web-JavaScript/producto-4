@@ -1,8 +1,8 @@
-# Producto 3: Backend con Express y GraphQL
+# Producto 4: FullStack con Backend con Express y GraphQL y FrontEnd con Vanilla JS
 
 Este proyecto implementa un servicio backend utilizando Express, Apollo Server (GraphQL) y MongoDB para gestionar usuarios y voluntariados, replicando la lógica del Producto 2.
 
------
+---
 
 ## 🚀 Instalación y Ejecución
 
@@ -19,41 +19,57 @@ Este proyecto implementa un servicio backend utilizando Express, Apollo Server (
     npm install
     ```
 
-3.  **Iniciar la base de datos (Docker)**
-    El proyecto utiliza Docker Compose para levantar el contenedor de MongoDB y poblarlo con datos iniciales automáticamente.
+3.  **Configurar Variables de Entorno**
+    Crea un archivo llamado `.env` en la raíz del proyecto y añade la cadena de conexión a la base de datos:
+
+    ```env
+    MONGO_URI=mongodb://admin:pass@localhost:27017/producto3?authSource=admin
+    ```
+
+4.  **Iniciar la base de datos (Docker)**
+    Levanta el contenedor de MongoDB utilizando Docker Compose.
 
     ```bash
     docker-compose up -d
     ```
 
-4.  **Iniciar el servidor de desarrollo**
-    El servidor se iniciará en `http://localhost:3000`.
+5.  **Carga de Datos (Seed)**
+    Ejecuta el script de "semilla" para **limpiar la base de datos y cargar los datos iniciales**.
+    *Nota: Este script encripta automáticamente las contraseñas y resetea las colecciones.*
+
+    ```bash
+    npm run seed
+    ```
+
+6.  **Iniciar el servidor de desarrollo**
+    El servidor se iniciará en `https://localhost:3000`.
 
     ```bash
     npm run dev
     ```
 
------
+---
 
 ## 🐳 Comandos Útiles de Docker
 
-  * **Levantar el contenedor en segundo plano:**
+* **Levantar el contenedor en segundo plano:**
 
     ```bash
     docker-compose up -d
     ```
 
-  * **Detener y eliminar el contenedor Y el volumen de datos:**
-    *(Esto es útil para forzar la reinicialización de los datos de `mongo-init.js`)*
+* **Detener y eliminar el contenedor Y el volumen de datos:**
+    *(Útil si quieres eliminar la persistencia de la base de datos completamente)*
 
     ```bash
     docker-compose down -v
     ```
 
------
+---
 
 ## 🍃 Comandos de MongoDB (Verificación)
-Pasos para conectarse al shell de MongoDB dentro del contenedor de Docker y verificar que los datos se han cargado correctamente.
+
+Pasos para conectarse al shell de MongoDB dentro del contenedor de Docker y verificar que los datos se han cargado correctamente tras ejecutar el seed.
 
 1.  **Abrir un shell `bash` dentro del contenedor:**
 
