@@ -1,8 +1,10 @@
 import jwt from 'jsonwebtoken';
 import { User } from '../models/user.model.js';
+import dotenv from 'dotenv';
 
-// En un proyecto real, esto va en un archivo .env
-const JWT_SECRET = 'SUPER_SECRETO_PARA_PRODUCTO3'; 
+dotenv.config();
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 /**
  * Verifica el token y recupera el usuario real de la Base de Datos.

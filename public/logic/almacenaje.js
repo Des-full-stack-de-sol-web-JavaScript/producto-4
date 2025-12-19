@@ -1,8 +1,10 @@
-import { userList } from "../assets/data/userList.js";
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 // Variable privada para la conexión a la base de datos
 let db;
-const URL = "https://localhost:3000/graphql";
+const URL = process.env.GRAPHQL_API_URL;
 
 const almacenaje = {
   // ==========================================

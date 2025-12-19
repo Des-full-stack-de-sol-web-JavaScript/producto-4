@@ -1,6 +1,9 @@
 import mongoose from "mongoose";
+import dotenv from 'dotenv';
 
-const uri = 'mongodb://admin:pass@localhost:27017/producto3?authSource=admin';
+dotenv.config();
+
+const MONGO_URI = process.env.MONGO_URI;
 
 //Opciones de Conexión Escalable
 const clientOptions = {
@@ -11,7 +14,7 @@ const clientOptions = {
 
 export async function connectDB() {
   try {
-    await mongoose.connect(uri, clientOptions);
+    await mongoose.connect(MONGO_URI, clientOptions);
     console.log('✅ Conexión a MongoDB establecida.');
   } catch (error) {
     console.error('❌ No se pudo conectar a MongoDB', error);
