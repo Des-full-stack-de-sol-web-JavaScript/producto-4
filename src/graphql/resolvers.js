@@ -1,9 +1,11 @@
 import * as UserService from '../services/usersService.js';
 import * as VoluntariadoService from '../services/voluntariadosService.js';
 import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
 
+dotenv.config();
 // Clave secreta para firmar los JWT. ¡DEBE SER UNA VARIABLE DE ENTORNO EN PRODUCCIÓN!
-const JWT_SECRET = 'SUPER_SECRETO_PARA_PRODUCTO3';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 /**
  * Función auxiliar para verificar si el usuario es administrador.
@@ -74,7 +76,7 @@ export const resolvers = {
  * @returns {Promise<Array<object>>}
  */
 
-    users: async () => {
+    users: async (_, args, context) => {
       checkautorizado(context, null);
       return await UserService.getAllUsers();
     },

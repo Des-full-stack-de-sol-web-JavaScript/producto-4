@@ -13,9 +13,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const passwordInput = document.getElementById("password");
   const confirmInput = document.getElementById("confirmar-password");
 
-  // --- FUNCIÓN PARA MOSTRAR NOTIFICACIÓN (Sustituye a alert) ---
+  // --- FUNCIÓN PARA MOSTRAR NOTIFICACIÓN ---
   const mostrarNotificacion = (mensaje, tipo = "success") => {
-    // Tipos: 'success' (verde), 'danger' (rojo), 'warning' (amarillo)
     mensajeContainer.innerHTML = `
         <div class="alert alert-${tipo} alert-dismissible fade show" role="alert">
             ${
@@ -28,7 +27,6 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       `;
 
-    // Auto-ocultar después de 4 segundos
     setTimeout(() => {
       const alerta = mensajeContainer.querySelector(".alert");
       if (alerta) {
@@ -39,33 +37,41 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // --- 1. RENDERIZADO DE LA TABLA ---
-  const renderizarTabla = () => {
-    tablaBody.innerHTML = "";
-    const usuarios = almacenaje.obtenerUsuarios();
+  const renderizarTabla = async () => {
+    tablaBody.innerHTML = `<tr><td colspan="4" class="text-center">Cargando usuarios...</td></tr>`;
+    
+    try {
+        const usuarios = await almacenaje.obtenerUsuarios();
 
-    if (usuarios.length === 0) {
-      tablaBody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">No hay usuarios registrados.</td></tr>`;
-      return;
+        tablaBody.innerHTML = ""; // Limpiar mensaje de carga
+
+        if (!usuarios || usuarios.length === 0) {
+            tablaBody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">No hay usuarios o no tienes permisos.</td></tr>`;
+            return;
+        }
+
+        usuarios.forEach((user) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${user.nombre}</td>
+                <td>${user.email}</td>
+                <td>********</td> 
+                <td class="text-end">
+                <button class="btn btn-outline-danger btn-sm btn-eliminar" data-email="${user.email}" title="Eliminar">
+                    <i class="bi bi-trash"></i> Borrar
+                </button>
+                </td>
+            `;
+            tablaBody.appendChild(tr);
+        });
+    } catch (error) {
+        console.error("Error al renderizar:", error);
+        tablaBody.innerHTML = `<tr><td colspan="4" class="text-center text-danger">Error al cargar usuarios.</td></tr>`;
     }
-
-    usuarios.forEach((user) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${user.nombre}</td>
-        <td>${user.email}</td>
-        <td>********</td> 
-        <td class="text-end">
-          <button class="btn btn-outline-danger btn-sm btn-eliminar" data-email="${user.email}" title="Eliminar">
-            <i class="bi bi-trash"></i> Borrar
-          </button>
-        </td>
-      `;
-      tablaBody.appendChild(tr);
-    });
   };
 
   // --- 2. GESTIÓN DE BORRADO ---
-  tablaBody.addEventListener("click", (e) => {
+  tablaBody.addEventListener("click", async (e) => { // AÑADIDO ASYNC
     const btn = e.target.closest(".btn-eliminar");
     if (!btn) return;
 
@@ -81,12 +87,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (confirm(`¿Seguro que quieres eliminar al usuario ${email}?`)) {
-      const borrado = almacenaje.borrarUsuario(email);
+      // AQUÍ FALTA CAMBIAR borrarUsuario POR UNA LLAMADA ASÍNCRONA AL BACKEND
+      // Si borrarUsuario sigue siendo local, funcionará, pero si la cambiaste a fetch, pon await.
+      const borrado = almacenaje.borrarUsuario(email); 
+      
       if (borrado) {
-        renderizarTabla();
+        await renderizarTabla(); // AÑADIDO AWAIT
         mostrarNotificacion("Usuario eliminado correctamente.", "warning");
       } else {
-        // CORREGIDO: Antes usabas alert() aquí
         mostrarNotificacion("Error al borrar el usuario.", "danger");
       }
     }
@@ -107,7 +115,7 @@ document.addEventListener("DOMContentLoaded", () => {
   confirmInput.addEventListener("input", validarPasswords);
 
   // --- 4. ENVÍO DEL FORMULARIO (ALTA) ---
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => { // AÑADIDO ASYNC IMPRESCINDIBLE
     event.preventDefault();
     event.stopPropagation();
 
@@ -125,7 +133,8 @@ document.addEventListener("DOMContentLoaded", () => {
       password: passwordInput.value.trim(),
     };
 
-    const resultado = almacenaje.registrarUsuario(nuevoUsuario);
+    // AÑADIDO AWAIT: registrarUsuario ahora hace un fetch, hay que esperar.
+    const resultado = await almacenaje.registrarUsuario(nuevoUsuario);
 
     if (resultado) {
       mostrarNotificacion(
@@ -135,11 +144,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       form.reset();
       form.classList.remove("was-validated");
-      renderizarTabla();
+      await renderizarTabla(); // AÑADIDO AWAIT para refrescar la lista
     } else {
-      // CORREGIDO: Antes usabas alert() aquí
       mostrarNotificacion(
-        "Error: El correo electrónico ya está registrado.",
+        "Error: No se pudo crear el usuario (correo duplicado o error de servidor).",
         "danger"
       );
 

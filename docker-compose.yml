@@ -12,7 +12,7 @@ services:
       - MONGO_INITDB_DATABASE=producto3 
     volumes:
       - mongo-data:/data/db
-      - ./mongo-init/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      #- ./mongo-init/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     restart: unless-stopped
 
 volumes:
