@@ -1,8 +1,8 @@
-import { dashboardData } from '../assets/data/dashboardData.js';
 import { almacenaje } from './almacenaje.js';
+// import { dashboardData } ya no es necesario aquí
 
 function voluntariadosPage() {
-    console.log("Cargando página de Voluntariados...");
+    console.log("Cargando página de Voluntariados desde el Backend..");
 
     const tabla = document.getElementById("tablaVoluntariado");
     const formulario = document.getElementById("formulario");
@@ -14,7 +14,6 @@ function voluntariadosPage() {
     // --- Notificaciones Visuales (Toast) ---
     function mostrarNotificacion(mensaje, tipo = 'success') {
         if (!mensajeContainer) return;
-
         mensajeContainer.innerHTML = `
             <div class="alert alert-${tipo} alert-dismissible fade show shadow-sm" role="alert">
                 <div class="d-flex align-items-center">
@@ -24,8 +23,6 @@ function voluntariadosPage() {
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         `;
-
-        // Auto-cerrar a los 4 segundos
         setTimeout(() => {
             const alerta = mensajeContainer.querySelector('.alert');
             if (alerta) {
@@ -33,20 +30,6 @@ function voluntariadosPage() {
                 setTimeout(() => mensajeContainer.innerHTML = '', 150);
             }
         }, 4000);
-    }
-
-    // --- Inicialización de Datos ---
-    async function inicializarDatos() {
-        try {
-            const voluntariados = await almacenaje.obtenerVoluntariados();
-            if (voluntariados.length === 0) {
-                for (const v of dashboardData) {
-                    await almacenaje.insertarVoluntariado(v);
-                }
-            }
-        } catch (error) {
-            console.error(error);
-        }
     }
 
     async function cargarDatosTabla() {
@@ -57,13 +40,13 @@ function voluntariadosPage() {
             datosTabla.forEach((voluntariado) => {
                 const fila = document.createElement("tr");
                 fila.innerHTML = `
-                    <td>${voluntariado.title || ''}</td>
+                    <td>${voluntariado.titulo || ''}</td>
                     <td>${voluntariado.email || ''}</td>
-                    <td>${voluntariado.date || ''}</td>
-                    <td>${voluntariado.description || ''}</td>
-                    <td>${voluntariado.type || ''}</td>
+                    <td>${voluntariado.fecha || ''}</td>
+                    <td>${voluntariado.descripcion || ''}</td>
+                    <td>${voluntariado.tipo || ''}</td>
                     <td class="text-end">
-                        <button type="button" class="btn btn-outline-danger btn-sm borrarBtn" data-id="${voluntariado.id}">
+                        <button type="button" class="btn btn-outline-danger btn-sm borrarBtn" data-id="${voluntariado._id}">
                             <i class="bi bi-trash"></i> Borrar
                         </button>
                     </td>`;
@@ -72,7 +55,7 @@ function voluntariadosPage() {
             dibujarGrafico(datosTabla);
         } catch (error) {
             console.error(error);
-            mostrarNotificacion("Error al cargar la tabla", "danger");
+            mostrarNotificacion("Error al conectar con el servidor", "danger");
         }
     }
 
@@ -103,9 +86,9 @@ function voluntariadosPage() {
         const usuarios = {};
         voluntariados.forEach(v => {
             const email = v.email || 'unknown';
-            const authorName = v.author || email.split('@')[0];
+            const authorName = email.split('@')[0];
             if (!usuarios[email]) usuarios[email] = { Petición: 0, Oferta: 0, author: authorName };
-            if (v.type === 'Petición' || v.type === 'Oferta') usuarios[email][v.type]++;
+            if (v.tipo === 'Petición' || v.tipo === 'Oferta') usuarios[email][v.tipo]++;
         });
 
         const emails = Object.keys(usuarios);
@@ -121,25 +104,19 @@ function voluntariadosPage() {
         ctx.font = "12px Arial";
 
         emails.forEach((email, i) => {
-            const { Petición: peticion, Oferta: oferta, author } = usuarios[email];
-            const xPeticion = gap + i * (2 * barWidth + gap);
-            const xOferta = xPeticion + barWidth;
-            const drawHeight = height - topMargin - bottomMargin;
+             const { Petición: peticion, Oferta: oferta, author } = usuarios[email];
+             const xPeticion = gap + i * (2 * barWidth + gap);
+             const xOferta = xPeticion + barWidth;
+             const drawHeight = height - topMargin - bottomMargin;
+             const hPeticion = (peticion / maxValor) * drawHeight;
+             const hOferta = (oferta / maxValor) * drawHeight;
 
-            const hPeticion = (peticion / maxValor) * drawHeight;
-            const hOferta = (oferta / maxValor) * drawHeight;
-
-            ctx.fillStyle = "#6f42c1";
-            ctx.fillRect(xPeticion, height - hPeticion - bottomMargin, barWidth, hPeticion);
-
-            ctx.fillStyle = "#198754";
-            ctx.fillRect(xOferta, height - hOferta - bottomMargin, barWidth, hOferta);
-
-            ctx.fillStyle = "#000";
-            ctx.fillText(author, xPeticion + barWidth, height - bottomMargin + 15);
-            
-            if (peticion > 0) ctx.fillText(peticion, xPeticion + barWidth / 2, height - hPeticion - bottomMargin - 5);
-            if (oferta > 0) ctx.fillText(oferta, xOferta + barWidth / 2, height - hOferta - bottomMargin - 5);
+             ctx.fillStyle = "#6f42c1";
+             ctx.fillRect(xPeticion, height - hPeticion - bottomMargin, barWidth, hPeticion);
+             ctx.fillStyle = "#198754";
+             ctx.fillRect(xOferta, height - hOferta - bottomMargin, barWidth, hOferta);
+             ctx.fillStyle = "#000";
+             ctx.fillText(author, xPeticion + barWidth, height - bottomMargin + 15);
         });
     }
 
@@ -149,19 +126,18 @@ function voluntariadosPage() {
             const btn = event.target.closest(".borrarBtn");
             if (btn) {
                 if(!confirm("¿Estás seguro de borrar este voluntariado?")) return;
-                
                 try {
-                    await almacenaje.borrarVoluntariado(Number(btn.dataset.id));
+                    await almacenaje.borrarVoluntariado(btn.dataset.id);
                     await cargarDatosTabla();
                     mostrarNotificacion("Voluntariado eliminado correctamente.", "warning");
                 } catch (error) {
                     console.error("Error al borrar:", error);
-                    mostrarNotificacion("No se pudo borrar el registro.", "danger");
+                    mostrarNotificacion("No se pudo borrar el registro (¿Permisos?).", "danger");
                 }
             }
         });
 
-        // Listener Crear (AQUÍ ESTABA EL PROBLEMA)
+
         formulario.addEventListener("submit", async (event) => {
             event.preventDefault();
             event.stopPropagation();
@@ -171,32 +147,26 @@ function voluntariadosPage() {
                 const formData = new FormData(formulario);
                 const nuevo = Object.fromEntries(formData.entries());
                 
-                const usuarioActivo = almacenaje.obtenerUsuarioActivo();
-                nuevo.author = usuarioActivo ? usuarioActivo.nombre : (nuevo.email ? nuevo.email.split('@')[0] : 'Anónimo');
+                // NOTA: Asegúrate de que los 'name' en tu HTML sean: 
+                // titulo, email, fecha, descripcion, tipo
+                // O el almacenaje.js hará el mapeo si usas los nombres en inglés.
 
                 try {
                     await almacenaje.insertarVoluntariado(nuevo);
-                    
-                    // Limpieza
                     formulario.classList.remove("was-validated");
                     formulario.reset();
                     await cargarDatosTabla();
-                    
-                    // --- NOTIFICACIÓN DE ÉXITO (Sin Alert) ---
-                    mostrarNotificacion("¡Voluntariado creado con éxito!", "success");
-
+                    mostrarNotificacion("¡Voluntariado creado en el servidor!", "success");
                 } catch (error) {
                     console.error("Error:", error);
-                    mostrarNotificacion("Error al guardar el voluntariado.", "danger");
+                    mostrarNotificacion("Error al guardar (¿Estás logueado?)", "danger");
                 }
             }
         });
     }
 
     async function init() {
-        await almacenaje.initDB();
         initListeners();
-        await inicializarDatos();
         await cargarDatosTabla();
     }
 
