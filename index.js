@@ -4,39 +4,11 @@ import express from 'express';
 import cors from 'cors';
 import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@as-integrations/express5';
-import jwt from 'jsonwebtoken';
 
 import { connectDB } from './src/config/mongo.js';
 import { typeDefs } from './src/graphql/schema.js';
 import { resolvers } from './src/graphql/resolvers.js';
-
-const JWT_SECRET = 'SUPER_SECRETO_PARA_PRODUCTO3';
-
-/**
- * Función para obtener el ID del usuario autenticado a partir del token JWT.
- * @param {string} token - Token JWT del encabezado 'Authorization'.
- * @returns {string|null} - El userId extraído del token o null si es inválido/expirado.
- */
-function getAuthUser(token) {
-  if (!token) {
-    return null;
-  }
-
-  const cleanToken = token.startsWith('Bearer ') ? token.slice(7, token.length) : token;
-
-  try {
-    const payload = jwt.verify(cleanToken, JWT_SECRET);
-
-    return {
-      userId: payload.userId,
-      email: payload.email,
-      rol: payload.rol
-    };
-  } catch (err) {
-    console.warn('Token inválido o expirado');
-    return null;
-  }
-}
+import { getUserFromToken } from './src/helpers/auth.js';
 
 
 /**
@@ -74,11 +46,17 @@ async function startServer() {
 
   app.use(express.static('public'));
 
+  const corsOptions = {
+    origin: '*', 
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'] 
+  };
+
 
   // Configuramos los middlewares de Express
   app.use(
     '/graphql',
-    cors(),
+    cors(corsOptions),
     express.json(),
     expressMiddleware(server, {
       /**s
@@ -90,7 +68,7 @@ async function startServer() {
       const token = req.headers.authorization || '';
 
       // 2. Decodificar el JWT
-      const authUser = getAuthUser(token);
+      const authUser = await getUserFromToken(token);
 
       // 3. Pasar el usuario al contexto
       return {
