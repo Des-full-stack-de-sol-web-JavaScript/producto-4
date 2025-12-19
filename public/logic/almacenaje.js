@@ -2,9 +2,9 @@ import { userList } from "../assets/data/userList.js";
 
 // Variable privada para la conexión a la base de datos
 let db;
+const URL = "https://localhost:3000/graphql";
 
 const almacenaje = {
-
   // ==========================================
   // 1. GESTIÓN DE INDEXEDDB (VOLUNTARIADOS)
   // ==========================================
@@ -16,7 +16,10 @@ const almacenaje = {
       request.onupgradeneeded = (event) => {
         db = event.target.result;
         if (!db.objectStoreNames.contains("voluntariados")) {
-          db.createObjectStore("voluntariados", { keyPath: "id", autoIncrement: true });
+          db.createObjectStore("voluntariados", {
+            keyPath: "id",
+            autoIncrement: true,
+          });
         }
       };
 
@@ -32,7 +35,7 @@ const almacenaje = {
   insertarVoluntariado(voluntariado) {
     return new Promise((resolve, reject) => {
       if (!db) return reject("DB no inicializada");
-      
+
       const transaction = db.transaction("voluntariados", "readwrite");
       const store = transaction.objectStore("voluntariados");
       const request = store.add(voluntariado);
@@ -75,35 +78,106 @@ const almacenaje = {
   },
 
   // ==========================================
-  // 2. GESTIÓN DE LOCALSTORAGE (USUARIOS Y SESIÓN)
+  // 2. GESTIÓN DE LOCALSTORAGE Y API (USUARIOS Y SESIÓN)
   // ==========================================
-
-  initusers() {
-    if (!localStorage.getItem("usersList")) {
-      localStorage.setItem("usersList", JSON.stringify(userList));
+  guardarToken(token) {
+    if (token) {
+      localStorage.setItem("jwt_token", token);
     }
   },
 
-  obtenerUsuarios() {
-    const usersJSON = localStorage.getItem("usersList");
-    return usersJSON ? JSON.parse(usersJSON) : [];
+  obtenerToken() {
+    return localStorage.getItem("jwt_token");
   },
 
-  registrarUsuario(nuevoUsuario) {
-    const users = this.obtenerUsuarios(); // Usamos 'this' para llamar a funciones internas
-    if (users.some(u => u.email === nuevoUsuario.email)) {
+  borrarToken() {
+    localStorage.removeItem("jwt_token");
+  },
+
+  async obtenerUsuarios() {
+    const query = `query Users {
+      users {
+          _id
+          nombre
+          email
+          rol
+      }
+    }`;
+
+    const token = this.obtenerToken();
+    const headers = { "Content-Type": "application/json" };
+
+    if (token) headers["Authorization"] = token;
+
+    try {
+      const response = await fetch(URL, {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify({ query }),
+      });
+
+      const { data, errors } = await response.json();
+      debugger
+
+      if (errors) {
+        console.error("Error de GraphQL:", errors);
+        return [];
+      }
+      return data && data.users ? data.users : [];
+    } catch (error) {
+      console.error("Error de red:", error);
+      return [];
+    }
+  },
+
+  async registrarUsuario({ nombre, email, password, rol }) {
+    const mutation = `
+      mutation AddUser($nombre: String!, $email: String!, $password: String!) {
+        addUser(nombre: $nombre, email: $email, password: $password) {
+          _id
+          nombre
+          email
+          rol
+        }
+      }
+    `;
+
+    try {
+      const response = await fetch(URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query: mutation,
+          variables: {
+            nombre,
+            email,
+            password,
+            rol,
+          },
+        }),
+      });
+
+      const { data, errors } = await response.json();
+
+      if (errors) {
+        console.error("Error de GraphQL:", errors);
+        return false;
+      }
+
+      return data.addUser;
+    } catch (error) {
+      console.error("Error de red:", error);
       return false;
     }
-    users.push(nuevoUsuario);
-    localStorage.setItem("usersList", JSON.stringify(users));
-    return true;
   },
 
   borrarUsuario(email) {
-    let users = this.obtenerUsuarios();
+    let users = JSON.parse(localStorage.getItem("usersList") || "[]");
     const initLen = users.length;
-    users = users.filter(u => u.email !== email);
-    
+    users = users.filter((u) => u.email !== email);
+
     if (users.length < initLen) {
       localStorage.setItem("usersList", JSON.stringify(users));
       return true;
@@ -111,21 +185,58 @@ const almacenaje = {
     return false;
   },
 
-  loguearUsuario(emailLogin, passwordLogin) {
-    const users = this.obtenerUsuarios();
-    const login = users.find(u => u.email === emailLogin && u.password === passwordLogin);
+  async loguearUsuario(emailLogin, passwordLogin) {
+    const mutation = `
+      mutation Login($email: String!, $password: String!) {
+        login(email: $email, password: $password) {
+          token
+          user {
+            _id
+            nombre
+            rol
+          }
+        }
+      }
+    `;
 
-    if (login) {
-      // Guardamos el usuario sin la contraseña por seguridad
-      const { password, ...userSafe } = login;
-      localStorage.setItem("activeUser", JSON.stringify(userSafe));
-      return true;
+    try {
+      const response = await fetch(URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query: mutation,
+          variables: {
+            email: emailLogin,
+            password: passwordLogin,
+          },
+        }),
+      });
+
+      const { data, errors } = await response.json();
+
+      if (errors) {
+        console.error("Error de GraphQL:", errors);
+        return null;
+      }
+
+      if (data.login && data.login.token) {
+        this.guardarToken(data.login.token);
+        localStorage.setItem("activeUser", JSON.stringify(data.login.user));
+      }
+
+      return data.login;
+    } catch (error) {
+      console.error("Error de red:", error);
+      return null;
     }
-    return false;
   },
 
   logoutUser() {
+    this.borrarToken();
     localStorage.removeItem("activeUser");
+    console.log("Sesión cerrada");
   },
 
   obtenerUsuarioActivo() {
@@ -134,8 +245,10 @@ const almacenaje = {
   },
 
   mostrarUsuarioActivo() {
-    return this.obtenerUsuarioActivo() ? this.obtenerUsuarioActivo().nombre : "-- no login --";
-  }
+    return this.obtenerUsuarioActivo()
+      ? this.obtenerUsuarioActivo().nombre
+      : "-- no login --";
+  },
 };
 
 export { almacenaje };
