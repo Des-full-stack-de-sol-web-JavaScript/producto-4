@@ -1,37 +1,15 @@
-import http from 'https'; // se usa httpS
+import https from 'https'; // se usa httpS
 import fs from 'fs'; // necesario para leer los certificados
 import express from 'express';
 import cors from 'cors';
 import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@as-integrations/express5';
-import jwt from 'jsonwebtoken';
 
 import { connectDB } from './src/config/mongo.js';
 import { typeDefs } from './src/graphql/schema.js';
 import { resolvers } from './src/graphql/resolvers.js';
+import { getUserFromToken } from './src/helpers/auth.js';
 
-const JWT_SECRET = 'SUPER_SECRETO_PARA_PRODUCTO3';
-
-/**
- * Función para obtener el ID del usuario autenticado a partir del token JWT.
- * @param {string} token - Token JWT del encabezado 'Authorization'.
- * @returns {string|null} - El userId extraído del token o null si es inválido/expirado.
- */
-function getAuthUserId(token) {
-  if (!token) {
-    return null;
-  }
-
-  const cleanToken = token.startsWith('Bearer ') ? token.slice(7, token.length) : token;
-
-  try {
-    const payload = jwt.verify(cleanToken, JWT_SECRET);
-    return payload.userId;
-  } catch (err) {
-    console.warn("Token JWT inválido o expirado:", err.message);
-    return null;
-  }
-}
 
 /**
  * Punto de entrada principal del servidor.
@@ -53,7 +31,8 @@ async function startServer() {
     key: fs.readFileSync('server.key'),
     cert: fs.readFileSync('server.cert')
   };
-  const httpServer = http.createServer(httpsOptions, app);
+  const httpsServer = https.createServer(httpsOptions, app);
+
   const port = 3000;
 
   // Creamos el servidor Apollo, pasándole nuestro esquema y resolvers importados
@@ -65,35 +44,45 @@ async function startServer() {
 
   await server.start();
 
+  app.use(express.static('public'));
+
+  const corsOptions = {
+    origin: '*', 
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'] 
+  };
+
+
   // Configuramos los middlewares de Express
   app.use(
     '/graphql',
-    cors(),
+    cors(corsOptions),
     express.json(),
     expressMiddleware(server, {
       /**s
        * Context global de GraphQL.
        * Aquí se añade la autenticación leyendo el header 'Authorization'.
        */
-      context: async ({ req }) => {
-        // 1. Obtener el token del encabezado
-        const token = req.headers.authorization || '';
+       context: async ({ req }) => {
+      // 1. Leer el token del header Authorization
+      const token = req.headers.authorization || '';
 
-        // 2. Obtener el userId a partir del token decodificado
-        const userId = getAuthUserId(token);
+      // 2. Decodificar el JWT
+      const authUser = await getUserFromToken(token);
 
-        return {
-          // 3. Pasar el userId al contexto, lo usan los resolvers para 'checkAuth'
-          userId
-        };
-      },
-    })
-  );
+      // 3. Pasar el usuario al contexto
+      return {
+        user: authUser // { userId, email, rol } | null
+      };
+    },
+  })
+);
 
-  await new Promise((resolve) => httpServer.listen({ port }, resolve));
+  await new Promise((resolve) => httpsServer.listen({ port }, resolve));
 
-  console.log(`🚀 Servidor Express listo en http://localhost:${port}`);
-  console.log(`🚀 Servidor GraphQL listo en http://localhost:${port}/graphql`);
+  console.log(`🚀 Servidor Express listo en https://localhost:${port}`);
+  console.log(`🚀 Servidor GraphQL listo en https://localhost:${port}/graphql`);
+
 }
 
 startServer();
