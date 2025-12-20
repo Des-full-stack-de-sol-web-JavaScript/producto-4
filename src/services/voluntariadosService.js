@@ -1,12 +1,25 @@
 import { Voluntariado } from '../models/voluntariado.model.js';
 
+//  Obtiene voluntariados aplicando filtros de búsqueda (NUEVA FUNCIÓN).
+export async function getVoluntariadosFiltrados({ titulo, tipo }) {
+  try {
+    let query = {};
 
-/**
- * Obtiene todos los voluntariados almacenados en la base de datos.
- * @async
- * @returns {Promise<Array<object>>} Lista completa de voluntariados.
- * @throws {Error} Si ocurre un error al consultar la base de datos.
- */
+    // Filtro por título: búsqueda parcial e insensible a mayúsculas
+    if (titulo) {
+      query.titulo = { $regex: titulo, $options: 'i' };
+    }
+    // Filtro por tipo: búsqueda exacta
+    if (tipo) {
+      query.tipo = tipo;
+    }
+    return await Voluntariado.find(query);
+  } catch (error) {
+    throw new Error(`Error al filtrar voluntariados: ${error.message}`);
+  }
+}
+
+// Obtiene todos los voluntariados almacenados en la base de datos.
 export async function getAllVoluntariados() {
   try {
     return await Voluntariado.find({});
@@ -15,13 +28,7 @@ export async function getAllVoluntariados() {
   }
 }
 
-/**
- * Obtiene un voluntariado específico por su ID.
- * @async
- * @param {string} id - ID del voluntariado en formato string.
- * @returns {Promise<object|null>} Documento de voluntariado encontrado o null si no existe.
- * @throws {Error} Si ocurre un error en la consulta.
- */
+// Obtiene un voluntariado específico por su ID.
 export async function getVoluntariadoById(id) {
   try {
     return await Voluntariado.findById(id);
@@ -30,17 +37,7 @@ export async function getVoluntariadoById(id) {
   }
 }
 
-/**
- * Crea un nuevo voluntariado en la base de datos.
- * @async
- * @param {object} data - Datos del voluntariado a crear.
- * @param {string} data.titulo - Título del voluntariado.
- * @param {string} data.descripcion - Descripción del voluntariado.
- * @param {string} data.fecha - Fecha del evento.
- * @param {string} data.organizador - Nombre del organizador.
- * @returns {Promise<object>} Voluntariado recién insertado.
- * @throws {Error} Si ocurre un error al insertar.
- */
+// Crea un nuevo voluntariado en la base de datos.
 export async function addVoluntariado(data) {
   try {
     const nuevoVoluntariado = await Voluntariado.create(data);
@@ -50,14 +47,7 @@ export async function addVoluntariado(data) {
   }
 }
 
-/**
- * Actualiza un voluntariado existente.
- * @async
- * @param {string} id - ID del voluntariado a actualizar.
- * @param {object} data - Campos a actualizar.
- * @returns {Promise<object|null>} El voluntariado actualizado o null si no existe.
- * @throws {Error} Si ocurre un error en la actualización.
- */
+// Actualiza un voluntariado existente.
 export async function updateVoluntariado(id, data) {
   try {
     const updated = await Voluntariado.findByIdAndUpdate(
@@ -71,13 +61,7 @@ export async function updateVoluntariado(id, data) {
   }
 }
 
-/**
- * Elimina un voluntariado por su ID.
- * @async
- * @param {string} id - ID del voluntariado a eliminar.
- * @returns {Promise<boolean>} true si se eliminó correctamente, false si no existe.
- * @throws {Error} Si ocurre un error durante la eliminación.
- */
+//  Elimina un voluntariado por su ID.
 export async function deleteVoluntariado(id) {
   try {
     const result = await Voluntariado.deleteOne({ _id: id });
@@ -87,12 +71,9 @@ export async function deleteVoluntariado(id) {
   }
 }
 
-/**
- * Obtiene estadísticas de los voluntariados usando agregaciones de Mongoose.
- */
+// Obtiene estadísticas de los voluntariados usando agregaciones de Mongoose.
 export async function getVoluntariadoStats() {
   try {
-    // Llamamos al método estático que acabamos de crear en el modelo
     return await Voluntariado.obtenerEstadisticas();
   } catch (error) {
     throw new Error(`Error al obtener estadísticas: ${error.message}`);

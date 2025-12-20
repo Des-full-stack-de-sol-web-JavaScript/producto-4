@@ -6,6 +6,7 @@ export const voluntariados = [
     email: "kevin.gomez@gmail.com",
     tipo: "Oferta"
   },
+
   {
     titulo: "Voluntariado para acompañamiento a personas mayores",
     fecha: "2025-03-05",
@@ -13,11 +14,21 @@ export const voluntariados = [
     email: "thabata.diaz@gmail.com",
     tipo: "Petición"
   },
+
   {
     titulo: "Clases de Matemáticas",
     fecha: "2025-04-10",
     descripcion: "Estudiante de ingeniería ofrece clases de repaso.",
     email: "doplax@gmail.com",
     tipo: "Oferta"
-  }
+  },
+
+  {
+    titulo: "Voluntariado para refuerzo a estudiantes",
+    fecha: "2025-12-21",
+    descripcion: "Se buscan voluntarios para hacer refuerzo escolar a estudiantes desfavorecidos.",
+    email: "anna.ruiz@gmail.com",
+    tipo: "Petición"
+  },
+
 ];

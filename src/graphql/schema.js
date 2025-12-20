@@ -2,14 +2,12 @@ import { gql } from 'graphql-tag';
 
 /**
  * Definición del esquema GraphQL (typeDefs).
- * 
- * Aquí se describen:
+ * * Aquí se describen:
  * - Tipos (Type)
  * - Consultas (Query)
  * - Mutaciones (Mutation)
  * - Inputs
- * 
- * Este esquema será cargado por Apollo Server para generar
+ * * Este esquema será cargado por Apollo Server para generar
  * el endpoint /graphql.
  */
 export const typeDefs = gql`
@@ -29,6 +27,7 @@ export const typeDefs = gql`
     descripcion: String
     tipo: String
   }
+
   # Nuevo tipo para la respuesta de autenticación: token y datos del usuario
   type AuthPayload {
     token: String!
@@ -46,9 +45,9 @@ export const typeDefs = gql`
     users: [User!]!
     user(id: ID!): User
 
-    voluntariados: [Voluntariado!]!
+    # CAMBIO: Se han añadido los argumentos opcionales titulo y tipo para los filtros
+    voluntariados(titulo: String, tipo: String): [Voluntariado!]!
     voluntariado(id: ID!): Voluntariado
-    
     statsVoluntariados: [Estadistica!]!
   }
 
