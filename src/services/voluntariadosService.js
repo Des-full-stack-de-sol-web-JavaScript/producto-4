@@ -1,6 +1,6 @@
 import { Voluntariado } from '../models/voluntariado.model.js';
 
-//  Obtiene voluntariados aplicando filtros de búsqueda (NUEVA FUNCIÓN).
+//  Obtiene voluntariados aplicando filtros de búsqueda.
 export async function getVoluntariadosFiltrados({ titulo, tipo }) {
   try {
     let query = {};

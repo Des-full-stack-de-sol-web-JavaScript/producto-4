@@ -1,88 +1,95 @@
-import https from 'https'; // se usa httpS
-import fs from 'fs'; // necesario para leer los certificados
+import https from 'https';
+import fs from 'fs';
 import express from 'express';
 import cors from 'cors';
 import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@as-integrations/express5';
-
+import { makeExecutableSchema } from '@graphql-tools/schema';
+import { WebSocketServer } from 'ws';
+import { useServer } from 'graphql-ws/use/ws';
+import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
 import { connectDB } from './src/config/mongo.js';
 import { typeDefs } from './src/graphql/schema.js';
 import { resolvers } from './src/graphql/resolvers.js';
 import { getUserFromToken } from './src/helpers/auth.js';
 
-
-/**
- * Punto de entrada principal del servidor.
- * 
- * - Inicia Express.
- * - Conecta con MongoDB.
- * - Configura Apollo Server como middleware en /graphql.
- * - Inicia servidor HTTPS.
- * 
- * Este servidor se encarga de manejar todas las peticiones
- * GraphQL enviadas por Postman, frontend o clientes externos.
- */
 async function startServer() {
+  // Conexión a la base de datos
   await connectDB();
 
   const app = express();
-  //CONFIGURACIÓN HTTPS
+
+  // CONFIGURACIÓN HTTPS (Certificados)
   const httpsOptions = {
     key: fs.readFileSync('server.key'),
     cert: fs.readFileSync('server.cert')
   };
   const httpsServer = https.createServer(httpsOptions, app);
 
-  const port = 3000;
+  // 1. Crear el esquema ejecutable (Necesario para que Query y Subscription compartan lógica)
+  const schema = makeExecutableSchema({ typeDefs, resolvers });
 
-  // Creamos el servidor Apollo, pasándole nuestro esquema y resolvers importados
-  const server = new ApolloServer({
-    typeDefs,
-    resolvers,
+  // 2. Crear el servidor de WebSockets vinculado al servidor HTTPS
+  const wsServer = new WebSocketServer({
+    server: httpsServer,
+    path: '/graphql',
   });
 
+  // 3. Configurar el manejo de la conexión WebSocket (Suscripciones)
+  const serverCleanup = useServer({ schema }, wsServer);
+
+  const port = 3000;
+
+  // 4. Iniciar Apollo Server con plugins para cerrar conexiones limpiamente
+  const server = new ApolloServer({
+    schema,
+    plugins: [
+      // Cierre limpio del servidor HTTP
+      ApolloServerPluginDrainHttpServer({ httpServer: httpsServer }),
+      // Cierre limpio del servidor de WebSockets
+      {
+        async serverWillStart() {
+          return {
+            async drainServer() {
+              await serverCleanup.dispose();
+            },
+          };
+        },
+      },
+    ],
+  });
 
   await server.start();
 
   app.use(express.static('public'));
 
   const corsOptions = {
-    origin: '*', 
+    origin: '*',
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization'] 
+    allowedHeaders: ['Content-Type', 'Authorization']
   };
 
-
-  // Configuramos los middlewares de Express
+  // Middleware de Apollo
   app.use(
     '/graphql',
     cors(corsOptions),
     express.json(),
     expressMiddleware(server, {
-      /**s
-       * Context global de GraphQL.
-       * Aquí se añade la autenticación leyendo el header 'Authorization'.
-       */
-       context: async ({ req }) => {
-      // 1. Leer el token del header Authorization
-      const token = req.headers.authorization || '';
+      context: async ({ req }) => {
+        // Autenticación por Token para las Queries y Mutations normales
+        const token = req.headers.authorization || '';
+        const authUser = await getUserFromToken(token);
+        return { user: authUser };
+      },
+    })
+  );
 
-      // 2. Decodificar el JWT
-      const authUser = await getUserFromToken(token);
-
-      // 3. Pasar el usuario al contexto
-      return {
-        user: authUser // { userId, email, rol } | null
-      };
-    },
-  })
-);
-
+  // Iniciar el servidor HTTPS (también WSS)
   await new Promise((resolve) => httpsServer.listen({ port }, resolve));
 
-  console.log(`🚀 Servidor Express listo en https://localhost:${port}`);
-  console.log(`🚀 Servidor GraphQL listo en https://localhost:${port}/graphql`);
-
+  console.log(`✅ Servidor Express/HTTPS listo en https://localhost:${port}`);
+  console.log(`🚀 GraphQL Playground: https://localhost:${port}/graphql`);
+  console.log(`📡 Suscripciones activas en wss://localhost:${port}/graphql`);
 }
 
 startServer();

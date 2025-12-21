@@ -1,3 +1,4 @@
+import { PubSub } from 'graphql-subscriptions'; // 1. Importamos la herramienta de tiempo real
 import * as UserService from '../services/usersService.js';
 import * as VoluntariadoService from '../services/voluntariadosService.js';
 import jwt from 'jsonwebtoken';
@@ -6,7 +7,10 @@ import dotenv from 'dotenv';
 dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET;
 
-// Funciones auxiliares de verificación
+// 2. Creamos la instancia de PubSub para gestionar los mensajes
+const pubsub = new PubSub();
+
+// Funciones auxiliares de verificación 
 export const checkAdmin = (context) => {
   if (!context.user) throw new Error('Autenticación requerida');
   if (context.user.rol !== 'admin') throw new Error('Acceso denegado: solo administradores');
@@ -33,13 +37,11 @@ export const resolvers = {
       return await UserService.getAllUsers();
     },
 
-    // CORRECCIÓN: Se añade 'context' a los parámetros para que checkautorizado funcione
     user: async (_, { id }, context) => {
       checkautorizado(context, id, 'userId');
       return await UserService.getUserById(id);
     },
 
-    // CAMBIO: Se pasan los argumentos de filtro al servicio
     voluntariados: async (_, { titulo, tipo }) => {
       return await VoluntariadoService.getVoluntariadosFiltrados({ titulo, tipo });
     },
@@ -75,7 +77,12 @@ export const resolvers = {
 
     addVoluntariado: async (_, { titulo, email, fecha, descripcion, tipo }, context) => {
       checkAuth(context);
-      return await VoluntariadoService.addVoluntariado({ titulo, email, fecha, descripcion, tipo });
+      const nuevo = await VoluntariadoService.addVoluntariado({ titulo, email, fecha, descripcion, tipo });
+      
+      // 3. ¡AVISO EN TIEMPO REAL!: Publicamos que se ha creado uno nuevo
+      pubsub.publish('VOLUNTARIADO_CREADO', { voluntariadoCreado: nuevo });
+      
+      return nuevo;
     },
 
     updateVoluntariado: async (_, { id, titulo, email, fecha, descripcion, tipo }, context) => {
@@ -89,5 +96,12 @@ export const resolvers = {
       checkautorizado(context, voluntariado.email, 'email');
       return await VoluntariadoService.deleteVoluntariado(id);
     }
-  }
+  },
+
+  // 4. EL CANAL DE ESCUCHA: Definimos la suscripción
+  Subscription: {
+    voluntariadoCreado: {
+      subscribe: () => pubsub.asyncIterator(['VOLUNTARIADO_CREADO']),
+    },
+  },
 };
