@@ -1,7 +1,7 @@
 export function dashboardCard(item) {
   let accentColor = '#0d6efd'; 
-  if (item.type === 'Petición') accentColor = '#6f42c1'; // Morado
-  if (item.type === 'Oferta') accentColor = '#198754';   // Verde
+  if (item.tipo === 'Petición') accentColor = '#6f42c1'; 
+  if (item.tipo === 'Oferta') accentColor = '#198754';   
 
   // Contenedor de columna Bootstrap (Responsive)
   const cardColumn = document.createElement('div');

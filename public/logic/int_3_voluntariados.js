@@ -2,12 +2,11 @@ import { almacenaje } from "./almacenaje.js";
 import { mostrarNotificacion } from "../components/notifications.js";
 
 function voluntariadosPage() {
-  console.log("Cargando página de Voluntariados desde el Backend..");
+  console.log("Cargando página de Voluntariados...");
 
   const tabla = document.getElementById("tablaVoluntariado");
   const formulario = document.getElementById("formulario");
   const canvas = document.getElementById("graficoVoluntariados");
-  const mensajeContainer = document.getElementById("mensaje-sistema");
 
   if (!tabla || !formulario || !canvas) return;
 
@@ -16,7 +15,9 @@ function voluntariadosPage() {
       const datosTabla = await almacenaje.obtenerVoluntariados();
       tabla.innerHTML = "";
 
-      datosTabla.forEach((voluntariado) => {
+      const datosOrdenados = [...datosTabla].reverse();
+
+      datosOrdenados.forEach((voluntariado) => {
         const fila = document.createElement("tr");
         fila.innerHTML = `
                     <td>${voluntariado.titulo || ""}</td>
@@ -72,10 +73,10 @@ function voluntariadosPage() {
     voluntariados.forEach((v) => {
       const email = v.email || "unknown";
       const authorName = email.split("@")[0];
+      const tipo = v.tipo || v.type;
       if (!usuarios[email])
         usuarios[email] = { Petición: 0, Oferta: 0, author: authorName };
-      if (v.tipo === "Petición" || v.tipo === "Oferta")
-        usuarios[email][v.tipo]++;
+      if (tipo === "Petición" || tipo === "Oferta") usuarios[email][tipo]++;
     });
 
     const emails = Object.keys(usuarios);
@@ -116,18 +117,12 @@ function voluntariadosPage() {
   }
 
   function initListeners() {
-    // Listener Borrar
     tabla.addEventListener("click", async (event) => {
       const btn = event.target.closest(".borrarBtn");
       if (btn) {
         if (!confirm("¿Estás seguro de borrar este voluntariado?")) return;
         try {
           await almacenaje.borrarVoluntariado(btn.dataset.id);
-          await cargarDatosTabla();
-          mostrarNotificacion(
-            "Voluntariado eliminado correctamente.",
-            "warning"
-          );
         } catch (error) {
           console.error("Error al borrar:", error);
           mostrarNotificacion(
@@ -151,14 +146,9 @@ function voluntariadosPage() {
           await almacenaje.insertarVoluntariado(nuevo);
           formulario.classList.remove("was-validated");
           formulario.reset();
-          await cargarDatosTabla();
-          mostrarNotificacion(
-            "¡Voluntariado creado en el servidor!",
-            "success"
-          );
         } catch (error) {
           console.error("Error:", error);
-          mostrarNotificacion("Error al guardar (¿Estás logueado?)", "danger");
+          mostrarNotificacion("Error al guardar.", "danger");
         }
       }
     });
@@ -171,17 +161,8 @@ function voluntariadosPage() {
       transports: ["websocket", "polling"],
     });
 
-    socket.on("connect", () => {
-      console.log(
-        "🟢 Conectado a WebSockets para actualizaciones en tiempo real"
-      );
-    });
-
     socket.on("nuevo_voluntariado", (nuevoDato) => {
-      console.log("📨 Notificación recibida: Nuevo voluntariado", nuevoDato);
-
       cargarDatosTabla();
-
       const titulo = nuevoDato.titulo || nuevoDato.title || "Nuevo registro";
       mostrarNotificacion(`¡Actualización! Se ha añadido: "${titulo}"`, "info");
     });

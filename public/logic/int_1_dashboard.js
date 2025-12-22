@@ -12,13 +12,16 @@ async function iniciarPaginaPrincipal() {
   if (!contDisponibles || !contSeleccionados) return;
 
   try {
-    // Cargar datos si está vacío (Modo Incógnito)
     let todosLosVoluntariados = await almacenaje.obtenerVoluntariados();
+
+    todosLosVoluntariados = todosLosVoluntariados.map((v) => ({ ...v,id: v._id || v.id,}));
+
     if (todosLosVoluntariados.length === 0) {
       for (const v of dashboardData) {
         await almacenaje.insertarVoluntariado(v);
       }
-      todosLosVoluntariados = await almacenaje.obtenerVoluntariados();
+      let temp = await almacenaje.obtenerVoluntariados();
+      todosLosVoluntariados = temp.map((v) => ({ ...v, id: v._id || v.id }));
     }
 
     if (todosLosVoluntariados.length === 0) {
@@ -29,32 +32,28 @@ async function iniciarPaginaPrincipal() {
     }
 
     const activeUser = almacenaje.obtenerUsuarioActivo();
-    let claveGuardado;
-    let datosParaMostrar;
 
-    // Determinar clave de guardado según usuario
-    if (activeUser) {
-      claveGuardado = `seleccion_${activeUser.email}`;
-      datosParaMostrar = todosLosVoluntariados;
-      if (contBotones) contBotones.style.display = "block";
-    } else {
-      claveGuardado = "seleccionIndex";
-      datosParaMostrar = todosLosVoluntariados;
-      if (contBotones) contBotones.style.display = "none";
+    if (activeUser && !activeUser.email) {
+      console.warn(
+        "⚠️ El usuario activo no tiene email. Revisa almacenaje.js > loguearUsuario"
+      );
     }
+
+    let claveGuardado = activeUser
+      ? `seleccion_${activeUser.email}`
+      : "seleccionIndex";
+    let datosParaMostrar = todosLosVoluntariados;
+
+    if (contBotones) contBotones.style.display = activeUser ? "block" : "none";
 
     const socket = io("https://localhost:3000", {
       transports: ["websocket", "polling"],
     });
 
     socket.on("nuevo_voluntariado", (nuevoVoluntariado) => {
-      console.log(
-        "⚡ Nuevo voluntariado recibido en Dashboard:",
-        nuevoVoluntariado
-      );
+      console.log("⚡ Nuevo voluntariado recibido:", nuevoVoluntariado);
 
-      nuevoVoluntariado.id = nuevoVoluntariado._id;
-
+      nuevoVoluntariado.id = nuevoVoluntariado._id || nuevoVoluntariado.id;
       todosLosVoluntariados.push(nuevoVoluntariado);
 
       renderizarTodo(
@@ -70,7 +69,7 @@ async function iniciarPaginaPrincipal() {
     });
 
     socket.on("voluntariado_eliminado", (idEliminado) => {
-      console.log("🗑️ Alguien ha borrado el ID:", idEliminado);
+      console.log("🗑️ Eliminado ID:", idEliminado);
 
       todosLosVoluntariados = todosLosVoluntariados.filter(
         (v) => String(v.id) !== String(idEliminado)
@@ -123,7 +122,7 @@ function renderizarTodo(
       event.target.classList.remove("dragging");
     });
 
-    if (idsGuardados.includes(item.id)) {
+    if (idsGuardados.map(String).includes(String(item.id))) {
       contSeleccionados.appendChild(tarjetaElement);
     } else {
       contDisponibles.appendChild(tarjetaElement);
@@ -141,34 +140,21 @@ function activarZonasDrop(claveGuardado) {
   const zonas = [contDisponibles, contSeleccionados];
 
   zonas.forEach((zona) => {
-    if (zona._manejadorDragOver)
-      zona.removeEventListener("dragover", zona._manejadorDragOver);
-    if (zona._manejadorDragLeave)
-      zona.removeEventListener("dragleave", zona._manejadorDragLeave);
     if (zona._manejadorDrop)
       zona.removeEventListener("drop", zona._manejadorDrop);
 
-    const manejadorDragOver = (event) => handleDragOver(event);
-    const manejadorDragLeave = (event) => handleDragLeave(event);
     const manejadorDrop = (event) => handleDrop(event, claveGuardado);
 
-    zona.addEventListener("dragover", manejadorDragOver);
-    zona.addEventListener("dragleave", manejadorDragLeave);
+    zona.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      e.currentTarget.classList.add("drag-over");
+    });
+    zona.addEventListener("dragleave", (e) =>
+      e.currentTarget.classList.remove("drag-over")
+    );
     zona.addEventListener("drop", manejadorDrop);
-
-    zona._manejadorDragOver = manejadorDragOver;
-    zona._manejadorDragLeave = manejadorDragLeave;
     zona._manejadorDrop = manejadorDrop;
   });
-}
-
-function handleDragOver(event) {
-  event.preventDefault(); // Necesario para permitir drop
-  event.currentTarget.classList.add("drag-over");
-}
-
-function handleDragLeave(event) {
-  event.currentTarget.classList.remove("drag-over");
 }
 
 function handleDrop(event, claveDeGuardado) {
@@ -188,10 +174,10 @@ function handleDrop(event, claveDeGuardado) {
 
 function guardarSeleccionActual(claveDeGuardado) {
   const tarjetasEnLaCaja = contSeleccionados.querySelectorAll("[data-item-id]");
-  const arrayDeIdsNumericos = Array.from(tarjetasEnLaCaja).map((tarjeta) =>
-    Number(tarjeta.dataset.itemId)
+  const arrayDeIds = Array.from(tarjetasEnLaCaja).map((tarjeta) => 
+    tarjeta.dataset.itemId
   );
-  localStorage.setItem(claveDeGuardado, JSON.stringify(arrayDeIdsNumericos));
+  localStorage.setItem(claveDeGuardado, JSON.stringify(arrayDeIds));
 }
 
 function conectarFiltros(activeUser, todosLosVoluntariados, claveGuardado) {
@@ -202,7 +188,6 @@ function conectarFiltros(activeUser, todosLosVoluntariados, claveGuardado) {
     const manejadorFiltro = (event) => {
       event.preventDefault();
 
-      // Gestión visual botones
       botonesFiltro.forEach((btn) => {
         btn.classList.remove("active", "btn-primary");
         btn.classList.add("btn-outline-primary");
