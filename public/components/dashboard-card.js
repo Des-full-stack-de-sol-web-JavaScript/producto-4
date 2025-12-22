@@ -12,9 +12,9 @@ export function dashboardCard(item) {
       <div class="accent" style="background-color: ${accentColor};"></div>
       
       <div class="body">
-        <h3 class="title">${item.title}</h3>
-        <p class="date">${new Date(item.date).toLocaleDateString()}</p>
-        <p class="description">${item.description}</p>
+        <h3 class="title">${item.titulo}</h3>
+        <p class="date">${new Date(item.fecha).toLocaleDateString()}</p>
+        <p class="description">${item.descripcion}</p>
         
         <div class="meta">
           <p>
@@ -22,7 +22,7 @@ export function dashboardCard(item) {
           </p>
           <p>
             <span class="meta-label">Categoría:</span> 
-            <span class="badge">${item.category || item.type}</span>
+            <span class="badge">${item.category || item.tipo}</span>
           </p>
           <p>
             <span class="meta-label">Email:</span> ${item.email}

@@ -221,7 +221,15 @@ export const resolvers = {
     deleteVoluntariado: async (_, { id }, context) => {
       const voluntariado = await VoluntariadoService.getVoluntariadoById(id);
       checkautorizado(context, voluntariado.email, "email");
-      return await VoluntariadoService.deleteVoluntariado(id);
+
+      const eliminado = await VoluntariadoService.deleteVoluntariado(id);
+
+      if (eliminado && context.io) {
+        console.log(`📡 Emitiendo borrado de: ${id}`);
+        context.io.emit("voluntariado_eliminado", id);
+      }
+
+      return eliminado;
     },
   },
 };
