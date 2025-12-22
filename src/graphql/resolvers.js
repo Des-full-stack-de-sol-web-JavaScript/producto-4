@@ -1,7 +1,7 @@
-import * as UserService from '../services/usersService.js';
-import * as VoluntariadoService from '../services/voluntariadosService.js';
-import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
+import * as UserService from "../services/usersService.js";
+import * as VoluntariadoService from "../services/voluntariadosService.js";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
 
 dotenv.config();
 // Clave secreta para firmar los JWT. ¡DEBE SER UNA VARIABLE DE ENTORNO EN PRODUCCIÓN!
@@ -13,10 +13,10 @@ const JWT_SECRET = process.env.JWT_SECRET;
  * @param {object} context - El contexto de la petición GraphQL.
  * @throws {Error} Si el usuario no está autenticado o si no es admin.
  */
-export const checkAdmin = (context) => { 
-  if (!context.user) throw new Error('Autenticación requerida');
-  if (context.user.rol !== 'admin') {
-    throw new Error('Acceso denegado: solo administradores');
+export const checkAdmin = (context) => {
+  if (!context.user) throw new Error("Autenticación requerida");
+  if (context.user.rol !== "admin") {
+    throw new Error("Acceso denegado: solo administradores");
   }
   return true;
 };
@@ -29,7 +29,7 @@ export const checkAdmin = (context) => {
  */
 
 export const checkAuth = (context) => {
-  if (!context.user) throw new Error('Autenticación requerida');
+  if (!context.user) throw new Error("Autenticación requerida");
   return true;
 };
 
@@ -42,67 +42,64 @@ export const checkAuth = (context) => {
  * @param {string} ownerValue - Identificador del dueño (userId o email)
  * @param {'userId'|'email'} ownerType - Tipo de comparación
  */
-export const checkautorizado = (context, ownerValue, ownerType = 'userId') => {
+export const checkautorizado = (context, ownerValue, ownerType = "userId") => {
   if (!context.user) {
-    throw new Error('Autenticación requerida');
+    throw new Error("Autenticación requerida");
   }
 
   // Admin puede todo
-  if (context.user.rol === 'admin') {
+  if (context.user.rol === "admin") {
     return true;
   }
 
   // Usuario normal: solo lo suyo
   const currentValue =
-    ownerType === 'email'
-      ? context.user.email
-      : context.user.userId;
+    ownerType === "email" ? context.user.email : context.user.userId;
 
   if (currentValue !== ownerValue) {
-    throw new Error('No autorizado');
+    throw new Error("No autorizado");
   }
 
   return true;
 };
 
-
 export const resolvers = {
-  /** 
-  * Resolvers de consultas (Query)
-  */
+  /**
+   * Resolvers de consultas (Query)
+   */
   Query: {
     /**
- * Obtiene todos los usuarios.
- * @returns {Promise<Array<object>>}
- */
+     * Obtiene todos los usuarios.
+     * @returns {Promise<Array<object>>}
+     */
 
     users: async (_, args, context) => {
       checkautorizado(context, null);
       return await UserService.getAllUsers();
     },
     /**
-    * Obtiene un usuario por su ID.
-    * @param {object} args
-    * @param {string} args.id - ID del usuario.
-    * @returns {Promise<object|null>}
-    */
+     * Obtiene un usuario por su ID.
+     * @param {object} args
+     * @param {string} args.id - ID del usuario.
+     * @returns {Promise<object|null>}
+     */
     user: async (_, { id }) => {
-      checkautorizado(context, id, 'userId');
+      checkautorizado(context, id, "userId");
       return await UserService.getUserById(id);
     },
     /**
-    * Obtiene todos los voluntariados.
-    * @returns {Promise<Array<object>>}
-    */
+     * Obtiene todos los voluntariados.
+     * @returns {Promise<Array<object>>}
+     */
     voluntariados: async () => {
       return await VoluntariadoService.getAllVoluntariados();
     },
     /**
-   * Obtiene un voluntariado por su ID.
-   * @param {object} args
-   * @param {string} args.id
-   * @returns {Promise<object|null>}
-   */
+     * Obtiene un voluntariado por su ID.
+     * @param {object} args
+     * @param {string} args.id
+     * @returns {Promise<object|null>}
+     */
     voluntariado: async (_, { id }) => {
       return await VoluntariadoService.getVoluntariadoById(id);
     },
@@ -110,34 +107,34 @@ export const resolvers = {
     // Conectamos la nueva query con el servicio
     statsVoluntariados: async () => {
       return await VoluntariadoService.getVoluntariadoStats();
-    }
+    },
   },
-  /** 
+  /**
    * Resolvers de Mutations (inserción, edición, borrado)
    */
   Mutation: {
     /**
-   * Mutación para el inicio de sesión.
-   * 1. Llama a loginUsuario para verificar las credenciales.
-   * 2. Si es exitoso, genera un token JWT.
-   * @returns {Promise<object>} AuthPayload con token y user.
-   */
+     * Mutación para el inicio de sesión.
+     * 1. Llama a loginUsuario para verificar las credenciales.
+     * 2. Si es exitoso, genera un token JWT.
+     * @returns {Promise<object>} AuthPayload con token y user.
+     */
     login: async (_, { email, password }) => {
       const user = await UserService.loginUsuario(email, password);
 
       const token = jwt.sign(
-        { 
+        {
           userId: user._id.toString(),
-           email: user.email,
-           rol: user.rol
-           },
+          email: user.email,
+          rol: user.rol,
+        },
         JWT_SECRET,
-        { expiresIn: '1d' }
+        { expiresIn: "1d" }
       );
 
       return {
         token,
-        user
+        user,
       };
     },
 
@@ -157,7 +154,7 @@ export const resolvers = {
      * @returns {Promise<boolean>}
      */
     deleteUser: async (_, { id }, context) => {
-      checkautorizado(context, id, 'userId');
+      checkautorizado(context, id, "userId");
       return await UserService.deleteUser(id);
     },
     /**
@@ -166,21 +163,54 @@ export const resolvers = {
      * @param {object} args.input
      * @returns {Promise<object>}
      */
-    addVoluntariado: async (_, { titulo, email, fecha, descripcion, tipo }, context) => {
+    addVoluntariado: async (
+      _,
+      { titulo, email, fecha, descripcion, tipo },
+      context
+    ) => {
+      // 1. Verificar seguridad
       checkAuth(context);
-      return await VoluntariadoService.addVoluntariado({ titulo, email, fecha, descripcion, tipo });
+
+      // 2. Guardar en Base de Datos (usando tu servicio)
+      const nuevoVoluntariado = await VoluntariadoService.addVoluntariado({
+        titulo,
+        email,
+        fecha,
+        descripcion,
+        tipo,
+      });
+
+      // 3. EMITIR EL EVENTO WEBSOCKET
+      // Esto le dice a todos los clientes conectados: "¡Hey, hay un nuevo voluntariado!"
+      // Le pasamos el objeto 'nuevoVoluntariado' para que el front lo pinte directamente.
+      if (context.io) {
+        context.io.emit("nuevo_voluntariado", nuevoVoluntariado);
+        console.log("📡 Evento 'nuevo_voluntariado' emitido vía Socket.io");
+      }
+
+      return nuevoVoluntariado;
     },
     /**
-    * Actualiza un voluntariado existente.
-    * @param {object} args
-    * @param {string} args.id
-    * @param {object} args.input
-    * @returns {Promise<object|null>}
-    */
-    updateVoluntariado: async (_, { id, titulo, email, fecha, descripcion, tipo }, context) => {
+     * Actualiza un voluntariado existente.
+     * @param {object} args
+     * @param {string} args.id
+     * @param {object} args.input
+     * @returns {Promise<object|null>}
+     */
+    updateVoluntariado: async (
+      _,
+      { id, titulo, email, fecha, descripcion, tipo },
+      context
+    ) => {
       const voluntariado = await VoluntariadoService.getVoluntariadoById(id);
-      checkautorizado(context, voluntariado.email, 'email');
-      return await VoluntariadoService.updateVoluntariado(id, { titulo, email, fecha, descripcion, tipo });
+      checkautorizado(context, voluntariado.email, "email");
+      return await VoluntariadoService.updateVoluntariado(id, {
+        titulo,
+        email,
+        fecha,
+        descripcion,
+        tipo,
+      });
     },
     /**
      * Elimina un voluntariado por ID.
@@ -190,8 +220,8 @@ export const resolvers = {
      */
     deleteVoluntariado: async (_, { id }, context) => {
       const voluntariado = await VoluntariadoService.getVoluntariadoById(id);
-      checkautorizado(context, voluntariado.email, 'email');
+      checkautorizado(context, voluntariado.email, "email");
       return await VoluntariadoService.deleteVoluntariado(id);
-    }
-  }
+    },
+  },
 };
