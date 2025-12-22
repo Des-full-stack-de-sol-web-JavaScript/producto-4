@@ -21,6 +21,7 @@ export async function getVoluntariadosFiltrados({ titulo, tipo }) {
 
 // Obtiene todos los voluntariados almacenados en la base de datos.
 export async function getAllVoluntariados() {
+  checkAuth(context);
   try {
     return await Voluntariado.find({});
   } catch (error) {
@@ -78,4 +79,24 @@ export async function getVoluntariadoStats() {
   } catch (error) {
     throw new Error(`Error al obtener estadísticas: ${error.message}`);
   }
+  }
+
+export async function getVoluntariadosFiltrados(filtro = {}) {
+  try {
+    const query = {};
+
+    if (filtro.tipo) query.tipo = filtro.tipo;
+    if (filtro.email) query.email = filtro.email;
+
+    if (filtro.fechaInicio || filtro.fechaFin) {
+      query.fecha = {};
+      if (filtro.fechaInicio) query.fecha.$gte = filtro.fechaInicio; 
+      if (filtro.fechaFin) query.fecha.$lte = filtro.fechaFin;       
+    }
+
+    return await Voluntariado.find(query).sort({ fecha: 1 });
+  } catch (error) {
+    throw new Error(`Error al filtrar voluntariados: ${error.message}`);
+  }
 }
+

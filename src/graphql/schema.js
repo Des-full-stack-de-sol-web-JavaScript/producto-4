@@ -1,6 +1,14 @@
 import { gql } from 'graphql-tag';
 
 export const typeDefs = gql`
+  # Input para filtrar voluntariados
+  input FiltroVoluntariado {
+    tipo: String
+    email: String
+    fechaInicio: String
+    fechaFin: String
+  }
+
   type User {
     _id: ID!
     nombre: String!
@@ -31,8 +39,15 @@ export const typeDefs = gql`
   type Query {
     users: [User!]!
     user(id: ID!): User
+<<<<<<< HEAD
     voluntariados(titulo: String, tipo: String): [Voluntariado!]!
     voluntariado(id: ID!): Voluntariado
+=======
+
+    voluntariados(filtro: FiltroVoluntariado): [Voluntariado!]!
+    voluntariado(id: ID!): Voluntariado
+  
+>>>>>>> 464865c1fcebec28d58c95c2ad434c70e5537833
     statsVoluntariados: [Estadistica!]!
   }
 
