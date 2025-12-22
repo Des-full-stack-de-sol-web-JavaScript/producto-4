@@ -88,11 +88,12 @@ export const resolvers = {
       return await UserService.getUserById(id);
     },
     /**
-     * Obtiene todos los voluntariados.
-     * @returns {Promise<Array<object>>}
-     */
-    voluntariados: async () => {
-      return await VoluntariadoService.getAllVoluntariados();
+    * Obtiene todos los voluntariados.
+    * @returns {Promise<Array<object>>}
+    */
+    voluntariados: async (_, { filtro }, context) => {
+    checkAuth(context); 
+    return await VoluntariadoService.getVoluntariadosFiltrados(filtro);
     },
     /**
      * Obtiene un voluntariado por su ID.
