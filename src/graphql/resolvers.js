@@ -94,8 +94,9 @@ export const resolvers = {
     * Obtiene todos los voluntariados.
     * @returns {Promise<Array<object>>}
     */
-    voluntariados: async () => {
-      return await VoluntariadoService.getAllVoluntariados();
+    voluntariados: async (_, { filtro }, context) => {
+    checkAuth(context); 
+    return await VoluntariadoService.getVoluntariadosFiltrados(filtro);
     },
     /**
    * Obtiene un voluntariado por su ID.
