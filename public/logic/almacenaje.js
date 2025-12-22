@@ -66,11 +66,11 @@ const almacenaje = {
   },
 
   async loguearUsuario(email, password) {
-    const mutation = `
+  const mutation = `
       mutation Login($email: String!, $password: String!) {
         login(email: $email, password: $password) {
           token
-          user { _id nombre rol }
+          user { _id nombre rol email }  
         }
       }
     `;
