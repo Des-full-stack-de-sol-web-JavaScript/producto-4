@@ -1,5 +1,5 @@
-import https from "https";
-import fs from "fs";
+import http from "http"; // 1. Cambiado de https a http
+// import fs from "fs"; // 2. Ya no es necesario leer certificados
 import express from "express";
 import cors from "cors";
 import { ApolloServer } from "@apollo/server";
@@ -8,18 +8,21 @@ import { expressMiddleware } from "@as-integrations/express5";
 import { connectDB } from "./src/config/mongo.js";
 import { typeDefs } from "./src/graphql/schema.js";
 import { resolvers } from "./src/graphql/resolvers.js";
-import { getUserFromToken } from "./src/helpers/auth.js"; 
+import { getUserFromToken } from "./src/helpers/auth.js";
+import dotenv from "dotenv";
+
 import { Server } from "socket.io";
+
+// Cargar variables de entorno si no se han cargado automáticamente
+dotenv.config();
+
 async function startServer() {
   await connectDB();
 
   const app = express();
-  
-  const httpsOptions = {
-    key: fs.readFileSync("server.key"),
-    cert: fs.readFileSync("server.cert"),
-  };
-  const httpsServer = https.createServer(httpsOptions, app);
+
+  // 3. Creamos un servidor HTTP simple (CodeSandbox pone el HTTPS por fuera)
+  const httpServer = http.createServer(app);
 
   const port = 3000;
 
@@ -30,7 +33,8 @@ async function startServer() {
 
   await server.start();
 
-  const io = new Server(httpsServer, {
+  // Socket.io se conecta al servidor HTTP
+  const io = new Server(httpServer, {
     cors: {
       origin: "*",
       methods: ["GET", "POST"],
@@ -62,16 +66,16 @@ async function startServer() {
         const authUser = await getUserFromToken(token);
         return {
           user: authUser,
-          io: io, 
+          io: io,
         };
       },
     })
   );
 
-  await new Promise((resolve) => httpsServer.listen({ port }, resolve));
+  await new Promise((resolve) => httpServer.listen({ port }, resolve));
 
-  console.log(`🚀 Servidor Express listo en https://localhost:${port}`);
-  console.log(`🚀 Servidor GraphQL listo en https://localhost:${port}/graphql`);
+  console.log("API URL:", process.env.GRAPHQL_API_URL);
+  console.log(`🚀 Servidor listo en http://localhost:${port}/graphql`);
 }
 
 startServer();
